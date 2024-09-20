@@ -7,8 +7,14 @@ const prisma = new PrismaClient();
 export async function listProduct() {
   try {
     return prisma.$transaction(async (tx) => {
+      const currentDate = new Date();
       const productList = await tx.product.findMany({
-        where: { campaignId: null },
+        where: {
+          campaignId: null,
+          expiredPeriod: {
+            gt: new Date(),
+          },
+        },
       });
 
       return productList;
@@ -18,7 +24,40 @@ export async function listProduct() {
   }
 }
 
-interface Campaigns {
+export async function currentProduct({ campaignId }: { campaignId: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const productList = await tx.product.findMany({
+        where: { campaignId: campaignId },
+      });
+
+      return productList;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export const listCampaignActive = () => {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const campaignActive = await tx.campaign.findMany({
+        where: {
+          inActive: false,
+          startDate: { lte: new Date() },
+          endDate: { gte: new Date() },
+        },
+      });
+
+      return campaignActive;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+};
+
+export interface Campaigns {
+  campaignId?: string;
   campaignName: string;
   startDate: string;
   endDate: string;
@@ -26,7 +65,9 @@ interface Campaigns {
   loyaltyPoint: number;
   image: any;
   description: string;
-  createdBy: string;
+  createdBy?: string;
+  updatedBy?: any;
+  oldProductId?: string[];
 }
 
 export async function addCampaign({
@@ -77,6 +118,109 @@ export async function campaignImage({ campaignId }: { campaignId: string }) {
     ]);
 
     return result;
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function searchCampaign({ findSearch }: { findSearch?: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const searchUser = await tx.campaign.findMany({
+        where: {
+          OR: [{ campaignName: { contains: findSearch } }],
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      return searchUser;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function disableCampaign({
+  updatedBy,
+  disable,
+  idEdit,
+}: {
+  updatedBy?: string;
+  idEdit?: string;
+  disable?: boolean;
+}) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const updateCampaign = await tx.campaign.update({
+        where: { campaignId: idEdit },
+        data: { inActive: disable, updatedBy: updatedBy },
+      });
+
+      return updateCampaign;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function deleteCampaign({ idEdit }: { idEdit?: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const updateCampaign = await tx.campaign.delete({
+        where: { campaignId: idEdit },
+      });
+
+      return updateCampaign;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function updateCampaign({
+  campaignName,
+  productId,
+  oldProductId,
+  startDate,
+  endDate,
+  image,
+  loyaltyPoint,
+  description,
+  campaignId,
+  updatedBy,
+}: Campaigns) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const updateCampaign = await tx.campaign.update({
+        where: { campaignId },
+        data: {
+          campaignName,
+          startDate,
+          endDate,
+          photo: image,
+          loyaltyPoint,
+          description,
+          updatedBy,
+        },
+      });
+
+      if (updateCampaign) {
+        console.log(oldProductId);
+        if (oldProductId) {
+          await tx.product.updateMany({
+            where: { productId: { in: oldProductId } },
+            data: { campaignId: null, updatedBy },
+          });
+        }
+
+        const setNewProductId = await tx.product.updateMany({
+          where: { productId: { in: productId } },
+          data: { campaignId: campaignId, updatedBy },
+        });
+
+        return setNewProductId;
+      }
+    });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }

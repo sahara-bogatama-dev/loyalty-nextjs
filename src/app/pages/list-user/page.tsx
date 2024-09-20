@@ -42,6 +42,8 @@ import { Pagination } from "@mui/material";
 import _ from "lodash";
 import { FaEdit } from "react-icons/fa";
 import { PiUserGearFill } from "react-icons/pi";
+import { MdDisabledByDefault } from "react-icons/md";
+import dayjs from "dayjs";
 
 export default function Home() {
   const { Content } = Layout;
@@ -63,6 +65,19 @@ export default function Home() {
 
   const [isModalEditOpen, setIsModalEditOpen] = React.useState(false);
   const [idEdit, setIdEdit] = React.useState("");
+
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
+  const [rolesForm] = Form.useForm();
+
+  const [isFormFilled, setIsFormFilled] = React.useState(false);
+
+  const onValuesChange = (changedValues: any) => {
+    const values = editForm.getFieldsValue();
+    const anyFilled = Object.values(values).some((value) => value);
+
+    setIsFormFilled(anyFilled);
+  };
 
   const fetchUser = async ({ take, skip }: { skip: number; take: number }) => {
     const user = await paginationUser({ take, skip });
@@ -94,9 +109,13 @@ export default function Home() {
             margin: "0px 16px",
           }}
         >
-          <Breadcrumb style={{ margin: "16px 0" }}>
-            <Breadcrumb.Item>List User</Breadcrumb.Item>
-          </Breadcrumb>
+          <Breadcrumb
+            items={[
+              { title: "Main", href: "/" },
+              { title: "List User", href: "/pages/list-user" },
+            ]}
+            style={{ margin: "16px 0" }}
+          />
           <div
             style={{
               padding: 24,
@@ -110,31 +129,20 @@ export default function Home() {
                 <Form
                   name="createUser"
                   className="gap-10"
-                  initialValues={{}}
+                  form={addForm}
                   onFinish={(value) => {
                     try {
                       setLoading(true);
                       createInternalUser({
                         email: value.email,
                         fullname: value.fullname,
-                        dateofbirth: moment(value.dateofbirth).format(
+                        dateofbirth: dayjs(value.dateofbirth).format(
                           "DD-MM-YYYY"
                         ),
                         phone: value.phone,
                         leader: value.leader,
                         createdBy: session?.user?.name ?? undefined,
                       })
-                        .then((value) => {
-                          fetchUser({
-                            skip: Math.max(0, (currentPage - 1) * 100),
-                            take: 100,
-                          });
-
-                          messageApi.open({
-                            type: "success",
-                            content: "Akun sudah dibuat. Silahkan check email.",
-                          });
-                        })
                         .catch((e) => {
                           messageApi.open({
                             type: "error",
@@ -143,11 +151,21 @@ export default function Home() {
                         })
                         .finally(() => {
                           setLoading(false);
+                          fetchUser({
+                            skip: Math.max(0, (currentPage - 1) * 100),
+                            take: 100,
+                          });
+                          addForm.resetFields();
+
+                          messageApi.open({
+                            type: "success",
+                            content: "Akun sudah dibuat. Silahkan check email.",
+                          });
                         });
-                    } catch (error: any) {
+                    } catch (e: any) {
                       messageApi.open({
                         type: "error",
-                        content: error.message,
+                        content: e.message,
                       });
                     }
                   }}
@@ -273,7 +291,7 @@ export default function Home() {
                   },
                 ]}
               >
-                <Input placeholder="fullname atau email" />
+                <Input placeholder="Product Name or Product Code" />
               </Form.Item>
 
               <Form.Item>
@@ -330,7 +348,9 @@ export default function Home() {
                         icon={<FaEdit />}
                         onClick={() => {
                           setIsModalEditOpen(true);
-                          setIdEdit(params.id.toString());
+                          editForm.setFieldsValue({
+                            userId: params.id.toString(),
+                          });
                         }}
                         label="Edit"
                         showInMenu
@@ -341,6 +361,9 @@ export default function Home() {
                         onClick={() => {
                           setIdEdit(params.id.toString());
                           setRole(params.row.role);
+                          rolesForm.setFieldsValue({
+                            userIdRoles: params.id.toString(),
+                          });
                           setIsModalRoleOpen(true);
                           roleUser()
                             .then((value) => {
@@ -358,7 +381,7 @@ export default function Home() {
                       />,
                       <GridActionsCellItem
                         key={params.id.toString()}
-                        icon={<FaEdit />}
+                        icon={<MdDisabledByDefault />}
                         onClick={() => {
                           disableUsers({
                             updatedBy: session?.user?.name ?? undefined,
@@ -455,8 +478,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                    valueFormatter: (params) =>
+                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                   {
                     field: "updatedBy",
@@ -472,8 +495,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                    valueFormatter: (params) =>
+                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                 ]}
               />
@@ -505,49 +528,57 @@ export default function Home() {
         open={isModalEditOpen}
         onCancel={() => {
           setIsModalEditOpen(false);
+          editForm.resetFields();
         }}
         footer={null}
         destroyOnClose={true}
       >
         <Form
-          preserve={false}
           name="editUser"
           layout="vertical"
+          form={editForm}
           labelCol={{ span: 24 }}
           wrapperCol={{ span: 24 }}
           onFinish={(value) => {
             setLoading(true);
             updateUsers({
-              idEdit: idEdit,
+              idEdit: value.userId,
               updatedBy: session?.user?.name ?? undefined,
               fullname: value.fullname,
               phone: value.phone,
               email: value.email,
               leader: value.leader,
-              bod: moment(value.dateofbirth).format("DD-MM-YYYY"),
+              bod: dayjs(value.dateofbirth).format("DD-MM-YYYY"),
             })
               .then(() => {
-                setLoading(false);
-                messageApi.open({
-                  type: "success",
-                  content: "Update berhasil.",
-                });
                 fetchUser({
                   skip: Math.max(0, (currentPage - 1) * 100),
                   take: 100,
                 });
               })
               .catch((e) => {
-                setLoading(false);
                 messageApi.open({
                   type: "error",
                   content: e.message,
                 });
+              })
+              .finally(() => {
+                setLoading(false);
+                editForm.resetFields();
+                setIsModalEditOpen(false);
+                messageApi.open({
+                  type: "success",
+                  content: "Update berhasil.",
+                });
               });
           }}
           autoComplete="off"
+          onValuesChange={onValuesChange}
         >
           <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
+            <Form.Item name="userId" hidden>
+              <Input />
+            </Form.Item>
             <Col className="gutter-row" xs={24} md={12} xl={8}>
               <Form.Item label="fullname" name="fullname">
                 <Input maxLength={100} />
@@ -588,7 +619,13 @@ export default function Home() {
 
           <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
             <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-              <Button loading={loading} type="primary" htmlType="submit" block>
+              <Button
+                loading={loading}
+                type="primary"
+                htmlType="submit"
+                block
+                disabled={!isFormFilled}
+              >
                 Update User
               </Button>
             </ConfigProvider>
@@ -607,22 +644,24 @@ export default function Home() {
             skip: Math.max(0, (currentPage - 1) * 100),
             take: 100,
           });
+          rolesForm.resetFields();
         }}
         footer={null}
         destroyOnClose={true}
       >
         <div className="h-[300px] overflow-auto p-2">
           <Form
-            preserve={false}
-            name="roles"
+            name="roleForm"
             layout="vertical"
             labelCol={{ span: 16 }}
             wrapperCol={{ span: 24 }}
+            form={rolesForm}
             onFinish={(value) => {
+              setLoading(true);
               addRoles({
                 idRole: value.roles,
                 id: session?.user?.id as string,
-                idEdit: idEdit,
+                idEdit: value.userIdRoles,
               })
                 .then((value) => {
                   setRole((prevRoles) => [
@@ -635,10 +674,16 @@ export default function Home() {
                     type: "error",
                     content: e.message,
                   });
+                })
+                .finally(() => {
+                  setLoading(false);
                 });
             }}
             autoComplete="off"
           >
+            <Form.Item name="userIdRoles" hidden>
+              <Input />
+            </Form.Item>
             <Form.Item
               label="Select Role"
               name="roles"
@@ -655,7 +700,7 @@ export default function Home() {
 
             <Form.Item wrapperCol={{ offset: 0, span: 2 }}>
               <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                <Button type="primary" htmlType="submit">
+                <Button type="primary" htmlType="submit" loading={loading}>
                   Submit
                 </Button>
               </ConfigProvider>
@@ -669,8 +714,11 @@ export default function Home() {
             renderItem={(item) => (
               <List.Item
                 actions={[
-                  <a
+                  <Button
+                    type="link"
+                    loading={loading}
                     onClick={() => {
+                      setLoading(true);
                       deleteRoles({
                         id: idEdit,
                         idRole: item.id,
@@ -690,12 +738,15 @@ export default function Home() {
                             type: "error",
                             content: e.message,
                           });
+                        })
+                        .finally(() => {
+                          setLoading(false);
                         });
                     }}
                     key="list-loadmore-edit"
                   >
                     delete
-                  </a>,
+                  </Button>,
                 ]}
               >
                 <span>{item.name}</span>

@@ -17,15 +17,19 @@ import {
   Select,
   Upload,
   DatePicker,
+  Modal,
 } from "antd";
 import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
 import {
   addCampaigns,
+  currentProducts,
+  deleteCampaigns,
+  disableCampaigns,
   listProducts,
   paginationCampaign,
-  paginationProduct,
-  searchProducts,
+  searchCampaigns,
+  updateCampaigns,
 } from "@/controller/action";
 import HeaderBar from "@/app/component/header.comp";
 import {
@@ -40,7 +44,11 @@ import moment from "moment";
 import { MdAddPhotoAlternate } from "react-icons/md";
 import { RcFile } from "antd/es/upload";
 import getBase64 from "@/lib/arrayBufferToBase64";
-import Img from "next/image";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+import "react-photo-view/dist/react-photo-view.css";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { MdDisabledByDefault } from "react-icons/md";
+import dayjs from "dayjs";
 
 export default function Home() {
   const { Content } = Layout;
@@ -49,9 +57,11 @@ export default function Home() {
   const [baseUrl, setBaseUrl] = React.useState("");
 
   const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
 
   const [collapsed, setCollapsed] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [loadingModal, setLoadingModal] = React.useState(false);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -60,8 +70,11 @@ export default function Home() {
   const [messageApi, contextHolder] = message.useMessage();
   const [campaignList, setCampaignList] = React.useState<any[]>([]);
   const [productList, setProductList] = React.useState<any[]>([]);
+  const [productCombList, setProductCombList] = React.useState<any[]>([]);
+  const [productOldList, setProductOldList] = React.useState<any[]>([]);
   const [totalPage, setTotalPage] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
+  const [isModalEditOpen, setIsModalEditOpen] = React.useState(false);
 
   const fetchCampaign = async ({
     take,
@@ -92,7 +105,7 @@ export default function Home() {
   }, []);
 
   const validateFile = async (file: RcFile) => {
-    const maxSize = 500 * 1024; // 500KB in bytes
+    const maxSize = 500 * 1024;
     const maxWidth = 864;
     const maxHeight = 400;
 
@@ -117,7 +130,7 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (e) => {
         if (e.target?.result) {
-          img.src = e.target.result as string; // Ensure result is a string
+          img.src = e.target.result as string;
         }
       };
       reader.onerror = () => {
@@ -130,6 +143,16 @@ export default function Home() {
   const validateUpload = (rule: any, value: any) => {
     if (!value || value.fileList.length === 0) {
       return Promise.reject("Please upload an image!");
+    }
+
+    return validateFile(value.fileList[0].originFileObj)
+      .then(() => Promise.resolve())
+      .catch((error) => Promise.reject(error));
+  };
+
+  const validateUploadEdit = (rule: any, value: any) => {
+    if (!value || value.fileList.length === 0) {
+      return Promise.resolve();
     }
 
     return validateFile(value.fileList[0].originFileObj)
@@ -157,9 +180,13 @@ export default function Home() {
             margin: "0px 16px",
           }}
         >
-          <Breadcrumb style={{ margin: "16px 0" }}>
-            <Breadcrumb.Item>Campaign</Breadcrumb.Item>
-          </Breadcrumb>
+          <Breadcrumb
+            items={[
+              { title: "Main", href: "/" },
+              { title: "Campaign", href: "/pages/campaign" },
+            ]}
+            style={{ margin: "16px 0" }}
+          />
           <div
             style={{
               padding: 24,
@@ -183,8 +210,8 @@ export default function Home() {
                       setLoading(true);
                       addCampaigns({
                         campaignName: value.campaignName,
-                        startDate: moment(value.dateRange[0]).toISOString(),
-                        endDate: moment(value.dateRange[1]).toISOString(),
+                        startDate: dayjs(value.dateRange[0]).toISOString(),
+                        endDate: dayjs(value.dateRange[1]).toISOString(),
                         productId: value.selectProduct,
                         description: value.desc,
                         loyaltyPoint: value.point,
@@ -195,13 +222,6 @@ export default function Home() {
                         ),
                       })
                         .then(() => {
-                          fetchProduct();
-                          addForm.resetFields();
-                          fetchCampaign({
-                            skip: 0,
-                            take: 100,
-                          });
-
                           messageApi.open({
                             type: "success",
                             content: "Campaign sudah ditambahkan.",
@@ -215,6 +235,12 @@ export default function Home() {
                         })
                         .finally(() => {
                           setLoading(false);
+                          fetchProduct();
+                          addForm.resetFields();
+                          fetchCampaign({
+                            skip: 0,
+                            take: 100,
+                          });
                         });
                     } catch (e: any) {
                       messageApi.open({
@@ -257,7 +283,7 @@ export default function Home() {
                           },
                         ]}
                       >
-                        <RangePicker format={"DD/MM/YYYY"} />
+                        <RangePicker format={"DD/MM/YYYY"} className="w-full" />
                       </Form.Item>
                     </Col>
 
@@ -331,6 +357,7 @@ export default function Home() {
                             validateFile(file).catch(() => false);
                             return false;
                           }}
+                          maxCount={1}
                         >
                           <button
                             style={{
@@ -368,13 +395,12 @@ export default function Home() {
               layout="inline"
               onFinish={(value) => {
                 setLoading(true);
-                searchProducts({ searchText: value.search })
+                searchCampaigns({ searchText: value.search })
                   .then((value) => {
-                    setProductList(value);
+                    setCampaignList(value);
                     setTotalPage(0);
                     setCurrentPage(0);
                   })
-
                   .catch((e) => {
                     messageApi.open({
                       type: "error",
@@ -424,6 +450,7 @@ export default function Home() {
                     onClick={() => {
                       setTotalPage(0);
                       setCurrentPage(0);
+                      fetchCampaign({ take: 100, skip: 0 });
                     }}
                   >
                     Reset
@@ -460,14 +487,95 @@ export default function Home() {
                     getActions: (params: GridRowParams) => [
                       <GridActionsCellItem
                         key={params.id.toString()}
-                        onClick={() => {}}
+                        onClick={() => {
+                          setLoadingModal(true);
+                          setIsModalEditOpen(true);
+
+                          fetchProduct().finally(() => {
+                            currentProducts({
+                              campaignId: params.id.toString(),
+                            })
+                              .then((value: any) => {
+                                setProductOldList(value);
+                                editForm.setFieldsValue({
+                                  selectProduct: value,
+                                });
+                                setProductCombList(
+                                  _.concat(productList, value)
+                                );
+                              })
+                              .catch((e) => {
+                                messageApi.open({
+                                  type: "error",
+                                  content: e.message,
+                                });
+                              })
+                              .finally(() => {
+                                setLoadingModal(false);
+                              });
+                          });
+                          editForm.setFieldsValue({
+                            campaignName: params.row.campaignName,
+                            point: params.row.loyaltyPoint,
+                            dateRange: [
+                              dayjs(params.row.startDate),
+                              dayjs(params.row.endDate),
+                            ],
+                            desc: params.row.description,
+                            campaignId: params.id.toString(),
+                          });
+                        }}
                         label="Edit"
+                        icon={<FaEdit />}
                         showInMenu
                       />,
                       <GridActionsCellItem
                         key={params.id.toString()}
-                        onClick={() => {}}
+                        icon={<MdDisabledByDefault />}
+                        onClick={() => {
+                          disableCampaigns({
+                            updatedBy: session?.user?.name ?? undefined,
+                            idEdit: params.id.toString(),
+                            disable: !params.row.inActive,
+                          })
+                            .then(() => {
+                              fetchCampaign({
+                                skip: Math.max(0, (currentPage - 1) * 100),
+                                take: 100,
+                              });
+                            })
+                            .catch((e) => {
+                              messageApi.open({
+                                type: "error",
+                                content: e.message,
+                              });
+                            });
+                        }}
                         label={`${params.row.inActive ? "Enable" : "Disable"}`}
+                        showInMenu
+                      />,
+                      <GridActionsCellItem
+                        key={params.id.toString()}
+                        icon={<FaTrash />}
+                        onClick={() => {
+                          deleteCampaigns({
+                            idEdit: params.id.toString(),
+                          })
+                            .then(() => {
+                              fetchCampaign({
+                                skip: Math.max(0, (currentPage - 1) * 100),
+                                take: 100,
+                              });
+                              fetchProduct();
+                            })
+                            .catch((e) => {
+                              messageApi.open({
+                                type: "error",
+                                content: e.message,
+                              });
+                            });
+                        }}
+                        label="Delete"
                         showInMenu
                       />,
                     ],
@@ -487,27 +595,34 @@ export default function Home() {
                   },
                   {
                     field: "startDate",
-                    headerName: "Nama Campaign",
+                    headerName: "Start Date",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                    valueFormatter: (params) =>
+                      moment(params).format("DD/MM/YYYY"),
                   },
                   {
                     field: "endDate",
-                    headerName: "Nama Campaign",
+                    headerName: "End Date",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                    valueFormatter: (params) =>
+                      moment(params).format("DD/MM/YYYY"),
                   },
                   {
                     field: "loyaltyPoint",
                     headerName: "Point",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "description",
+                    headerName: "Description",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
@@ -518,15 +633,18 @@ export default function Home() {
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
+                    align: "center",
                     renderCell: (params) => {
                       return (
-                        <Img
-                          src={`${baseUrl}/api/campaign/image/${params.id.toString()}`}
-                          alt="avatar"
-                          width={50}
-                          height={50}
-                          unoptimized
-                        />
+                        <PhotoProvider>
+                          <PhotoView
+                            src={`${baseUrl}/api/campaign/image/${params.id.toString()}`}
+                          >
+                            <Button onClick={() => {}} type="link">
+                              Tampilkan Gambar
+                            </Button>
+                          </PhotoView>
+                        </PhotoProvider>
                       );
                     },
                   },
@@ -544,8 +662,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                    valueFormatter: (params) =>
+                      moment(params).format("DD/MM/YYYY"),
                   },
                   {
                     field: "updatedBy",
@@ -561,8 +679,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                    valueFormatter: (params) =>
+                      moment(params).format("DD/MM/YYYY"),
                   },
                 ]}
               />
@@ -588,6 +706,213 @@ export default function Home() {
           </div>
         </Content>
       </Layout>
+
+      <Modal
+        title="Edit Campaign"
+        open={isModalEditOpen}
+        onCancel={() => {
+          setIsModalEditOpen(false);
+        }}
+        footer={null}
+        destroyOnClose={true}
+        width={1000}
+        loading={loadingModal}
+      >
+        <Form
+          name="editdCampaign"
+          className="gap-10"
+          form={editForm}
+          onFinish={async (value) => {
+            try {
+              setLoading(true);
+              const base64 = value.addImg
+                ? value.addImg?.file?.status === "removed"
+                  ? undefined
+                  : ((await getBase64(value.addImg.file)) as string)
+                : undefined;
+
+              updateCampaigns({
+                campaignId: value.campaignId,
+                campaignName: value.campaignName,
+                startDate: dayjs(value.dateRange[0]).toISOString(),
+                endDate: dayjs(value.dateRange[1]).toISOString(),
+                productId: value.selectProduct,
+                oldProductId: _.difference(
+                  _.map(productOldList, (o) => {
+                    return o.value;
+                  }),
+                  value.selectProduct
+                ),
+                description: value.desc,
+                loyaltyPoint: value.point,
+                updatedBy: session?.user?.name ?? "",
+                image: base64?.replace(/^data:image\/[a-z]+;base64,/, ""),
+              })
+                .then(() => {
+                  fetchCampaign({
+                    skip: Math.max(0, (currentPage - 1) * 100),
+                    take: 100,
+                  });
+                  fetchProduct();
+                })
+                .catch((e) => {
+                  messageApi.open({
+                    type: "error",
+                    content: e.message,
+                  });
+                })
+                .finally(() => {
+                  setLoading(false);
+                  setIsModalEditOpen(false);
+                  messageApi.open({
+                    type: "success",
+                    content: "Berhasil di update.",
+                  });
+                });
+            } catch (e: any) {
+              messageApi.open({
+                type: "error",
+                content: e.message,
+              });
+            }
+          }}
+          autoComplete="off"
+          labelCol={{ span: 24 }}
+          wrapperCol={{ span: 24 }}
+        >
+          <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
+            <Form.Item name="campaignId" hidden>
+              <Input />
+            </Form.Item>
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Campaign Name"
+                name="campaignName"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your Campaign name!",
+                  },
+                  {
+                    max: 255,
+                    message: "Max length Campaign name!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Range Date"
+                name="dateRange"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your start date!",
+                  },
+                ]}
+              >
+                <RangePicker format={"DD/MM/YYYY"} className="w-full" />
+              </Form.Item>
+            </Col>
+
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Select Product"
+                name="selectProduct"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your product!",
+                  },
+                ]}
+              >
+                <Select
+                  mode="multiple"
+                  allowClear
+                  options={_.map(productCombList, (o) => ({
+                    value: o.value,
+                    label: <span>{o.label}</span>,
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Point"
+                name="point"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your expired period!",
+                  },
+                ]}
+              >
+                <InputNumber addonAfter="Point" className="w-full" />
+              </Form.Item>
+            </Col>
+
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Description"
+                name="desc"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your base point!",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Upload Image"
+                name="addImg"
+                rules={[
+                  {
+                    validator: validateUploadEdit,
+                  },
+                ]}
+              >
+                <Upload
+                  listType="picture-card"
+                  multiple={false}
+                  accept=".jpeg,.jpg"
+                  beforeUpload={(file) => {
+                    validateFile(file).catch(() => false);
+                    return false;
+                  }}
+                  maxCount={1}
+                >
+                  <button
+                    style={{
+                      border: 0,
+                      background: "none",
+                    }}
+                    type="button"
+                  >
+                    <MdAddPhotoAlternate className="text-3xl" />
+                    <div style={{ marginTop: 8 }}>Upload</div>
+                  </button>
+                </Upload>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
+            <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
+              <Button loading={loading} type="primary" htmlType="submit" block>
+                Update Campaign
+              </Button>
+            </ConfigProvider>
+          </Form.Item>
+        </Form>
+      </Modal>
     </Layout>
   );
 }

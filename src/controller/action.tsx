@@ -20,8 +20,17 @@ import {
   searchProduct,
 } from "./product/crudProduct.db";
 import { paginationListProduct } from "./product/listProduct.db";
-import { addCampaign, listProduct } from "./campaign/crudCampaign.db";
-import arrayBufferToBase64 from "@/lib/arrayBufferToBase64";
+import {
+  addCampaign,
+  Campaigns,
+  currentProduct,
+  deleteCampaign,
+  disableCampaign,
+  listCampaignActive,
+  listProduct,
+  searchCampaign,
+  updateCampaign,
+} from "./campaign/crudCampaign.db";
 import { paginationListCampaign } from "./campaign/listUser.db";
 
 //region action login
@@ -50,7 +59,7 @@ const logout = async () => {
 };
 //endregion
 
-//region action get role user
+//region list USer
 const userRoles = async ({ id }: { id: string }) => {
   try {
     const detail = await userDetail({ id });
@@ -60,9 +69,7 @@ const userRoles = async ({ id }: { id: string }) => {
     throw new Error(error.message);
   }
 };
-//endregion
 
-//region create internal user
 const createInternalUser = async ({
   email,
   phone,
@@ -82,7 +89,6 @@ const createInternalUser = async ({
     const start = moment(`2000-01-01`);
     const end = moment(`${moment().year()}-12-31`);
 
-    // Generate a random date between start and end
     const randomDate = moment(start).add(
       Math.random() * end.diff(start),
       "milliseconds"
@@ -119,9 +125,7 @@ const createInternalUser = async ({
     throw new Error(error.message);
   }
 };
-//endregion
 
-//region action all user
 const paginationUser = async ({
   take,
   skip,
@@ -238,7 +242,6 @@ const updateUsers = async ({
   }
 };
 
-//endregion
 export {
   login,
   logout,
@@ -252,6 +255,7 @@ export {
   searchUsers,
   disableUsers,
 };
+//endregion
 
 //region Product
 const listUnits = async () => {
@@ -344,7 +348,6 @@ const searchProducts = async ({ searchText }: { searchText: string }) => {
   }
 };
 
-//endRegion
 export {
   listUnits,
   addProducts,
@@ -353,10 +356,25 @@ export {
   uploadProduct,
   searchProducts,
 };
+//endregion
 
+//region Campaign
 const listProducts = async () => {
   try {
     const data = await listProduct();
+
+    return _.map(data, (o) => ({
+      value: o.productId,
+      label: `${o.productCode} - ${o.productName}`,
+    }));
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+const currentProducts = async ({ campaignId }: { campaignId: string }) => {
+  try {
+    const data = await currentProduct({ campaignId });
 
     return _.map(data, (o) => ({
       value: o.productId,
@@ -404,6 +422,48 @@ const addCampaigns = async ({
   }
 };
 
+const updateCampaigns = async ({
+  campaignName,
+  productId,
+  oldProductId,
+  startDate,
+  endDate,
+  image,
+  loyaltyPoint,
+  description,
+  campaignId,
+  updatedBy,
+}: Campaigns) => {
+  try {
+    const data = await updateCampaign({
+      campaignName,
+      productId,
+      oldProductId,
+      startDate,
+      endDate,
+      image: image ? Buffer.from(image, "base64") : undefined,
+      loyaltyPoint,
+      description,
+      campaignId,
+      updatedBy,
+    });
+
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+const listCampaignActives = async () => {
+  try {
+    const data = await listCampaignActive();
+
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
 const paginationCampaign = async ({
   take,
   skip,
@@ -420,4 +480,53 @@ const paginationCampaign = async ({
   }
 };
 
-export { listProducts, addCampaigns, paginationCampaign };
+const searchCampaigns = async ({ searchText }: { searchText: string }) => {
+  try {
+    const data = await searchCampaign({ findSearch: searchText });
+
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+const disableCampaigns = async ({
+  updatedBy,
+  disable,
+  idEdit,
+}: {
+  idEdit?: string;
+  updatedBy?: string;
+  disable?: boolean;
+}) => {
+  try {
+    const data = await disableCampaign({ updatedBy, idEdit, disable });
+
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+const deleteCampaigns = async ({ idEdit }: { idEdit?: string }) => {
+  try {
+    const data = await deleteCampaign({ idEdit });
+
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+export {
+  listProducts,
+  addCampaigns,
+  paginationCampaign,
+  searchCampaigns,
+  disableCampaigns,
+  currentProducts,
+  updateCampaigns,
+  deleteCampaigns,
+  listCampaignActives,
+};
+//endregion

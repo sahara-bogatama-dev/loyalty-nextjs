@@ -130,6 +130,7 @@ export default function Home() {
             data: _.map(json, (o: any) => ({
               ...o,
               expiredPeriod: moment().add(o.expiredPeriod, "days").toDate(),
+              createdBy: session?.user?.name,
             })),
           })
             .then(() => {
@@ -179,9 +180,13 @@ export default function Home() {
             margin: "0px 16px",
           }}
         >
-          <Breadcrumb style={{ margin: "16px 0" }}>
-            <Breadcrumb.Item>Product</Breadcrumb.Item>
-          </Breadcrumb>
+          <Breadcrumb
+            items={[
+              { title: "Main", href: "/" },
+              { title: "Product", href: "/pages/product" },
+            ]}
+            style={{ margin: "16px 0" }}
+          />
           <div
             style={{
               padding: 24,
@@ -433,10 +438,11 @@ export default function Home() {
                       <GridToolbarQuickFilter placeholder="Filter by data table" />
 
                       <Upload
-                        disabled={loading}
                         accept=".xlsx"
                         showUploadList={false}
                         onChange={handleFileChange}
+                        maxCount={1}
+                        multiple={false}
                       >
                         <Button
                           icon={<UploadOutlined />}
