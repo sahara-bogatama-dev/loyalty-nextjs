@@ -43,8 +43,6 @@ export default function Home() {
   const [loadingCampaign, setLoadingCampaign] = React.useState(false);
   const [activeCampaign, setActiveCampaign] = React.useState<any>([]);
 
-  const [chartInstanceTopTen, setChartInstanceTopTen] = useState<any>(null);
-
   const fetchCampaign = async () => {
     setLoadingCampaign(true);
     const campaign = await listCampaignActives();

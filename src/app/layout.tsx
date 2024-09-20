@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/lib/auth";
 import { SessionProvider } from "next-auth/react";
-import moment from "moment";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,9 +17,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  const sessionKey = new Date().valueOf();
+
   return (
     <html lang="en">
-      <SessionProvider session={session}>
+      <SessionProvider session={session} key={sessionKey}>
         <body className={inter.className}>{children}</body>
       </SessionProvider>
     </html>

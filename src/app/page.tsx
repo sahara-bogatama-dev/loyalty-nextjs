@@ -30,7 +30,7 @@ export default function Home() {
     } catch (error: any) {
       messageApi.open({
         type: "error",
-        content: error.message.replace(/Error: /g, ""),
+        content: error.message,
       });
     }
   };
@@ -78,6 +78,7 @@ export default function Home() {
               name="password"
               rules={[
                 { required: true, message: "Please input your password!" },
+                { min: 5, message: "Password min 5!" },
               ]}
             >
               <Input.Password />

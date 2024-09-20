@@ -221,6 +221,7 @@ export default function SideBar({
   React.useEffect(() => {
     const setMenu = async () => {
       try {
+        console.log(session, "not sessios");
         if (session) {
           const roles = await userRoles({ id: session?.user?.id as string });
           const arrayRoles = _.map(roles, "role");

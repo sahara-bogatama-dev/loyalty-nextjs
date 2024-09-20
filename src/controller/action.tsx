@@ -2,7 +2,7 @@
 
 import { signIn, signOut } from "@/lib/auth";
 
-import { CredentialsSignin } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { userDetail } from "./userDetail/userDetail.db";
 import _ from "lodash";
 import moment from "moment";
@@ -44,11 +44,13 @@ const login = async ({ email, password }: { email: any; password: any }) => {
     });
 
     return auth;
-  } catch (error) {
-    const someError = error as CredentialsSignin;
-
-    const cause = someError.cause as unknown as { err: string };
-    throw new Error(cause?.err);
+  } catch (error: any) {
+    switch (error.type) {
+      case "CallbackRouteError" || "CredentialsSignin":
+        throw new Error("Check email or password!");
+      default:
+        return { error: "Something went wrong!" };
+    }
   }
 };
 //endregion
