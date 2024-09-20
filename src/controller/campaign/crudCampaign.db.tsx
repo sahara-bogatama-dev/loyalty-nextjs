@@ -47,6 +47,19 @@ export const listCampaignActive = () => {
           startDate: { lte: new Date() },
           endDate: { gte: new Date() },
         },
+        select: {
+          campaignId: true,
+          campaignName: true,
+          loyaltyPoint: true,
+          description: true,
+          startDate: true,
+          endDate: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true,
+          inActive: true,
+        },
       });
 
       return campaignActive;
@@ -131,6 +144,19 @@ export async function searchCampaign({ findSearch }: { findSearch?: string }) {
           OR: [{ campaignName: { contains: findSearch } }],
         },
         orderBy: { createdAt: "asc" },
+        select: {
+          campaignId: true,
+          campaignName: true,
+          loyaltyPoint: true,
+          description: true,
+          startDate: true,
+          endDate: true,
+          createdAt: true,
+          createdBy: true,
+          updatedAt: true,
+          updatedBy: true,
+          inActive: true,
+        },
       });
 
       return searchUser;
