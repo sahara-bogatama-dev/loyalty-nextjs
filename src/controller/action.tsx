@@ -31,7 +31,7 @@ import {
   searchCampaign,
   updateCampaign,
 } from "./campaign/crudCampaign.db";
-import { paginationListCampaign } from "./campaign/listUser.db";
+import { paginationListCampaign } from "./campaign/listCampaign.db";
 
 //region action login
 const login = async ({ email, password }: { email: any; password: any }) => {
