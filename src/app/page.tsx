@@ -18,19 +18,17 @@ export default function Home() {
   const [messageApi, contextHolder] = message.useMessage();
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
-    try {
-      const resAuth = await login({
-        email: values.username as string,
-        password: values.password as string,
-      });
+    const resAuth = await login({
+      email: values.username as string,
+      password: values.password as string,
+    });
 
-      if (resAuth) {
-        router.replace("/pages/dashboard");
-      }
-    } catch (error: any) {
+    if (resAuth.success) {
+      router.replace("/pages/dashboard");
+    } else {
       messageApi.open({
         type: "error",
-        content: error.message.replace(/Error: /g, ""),
+        content: resAuth.error.replace(/Error: /g, ""),
       });
     }
   };

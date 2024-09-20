@@ -32,25 +32,29 @@ import {
   updateCampaign,
 } from "./campaign/crudCampaign.db";
 import { paginationListCampaign } from "./campaign/listCampaign.db";
+import { createServerAction, ServerActionError } from "@/lib/action-utils";
 
 //region action login
-const login = async ({ email, password }: { email: any; password: any }) => {
-  try {
-    const auth = await signIn("credentials", {
-      redirect: false,
-      redirectTo: "/",
-      email,
-      password,
-    });
 
-    return auth;
-  } catch (error) {
-    const someError = error as CredentialsSignin;
+const login = createServerAction(
+  async ({ email, password }: { email: any; password: any }) => {
+    try {
+      const auth = await signIn("credentials", {
+        redirect: false,
+        redirectTo: "/",
+        email,
+        password,
+      });
 
-    const cause = someError.cause as unknown as { err: string };
-    throw new Error(cause?.err);
+      return auth;
+    } catch (error) {
+      const someError = error as CredentialsSignin;
+
+      const cause = someError.cause as unknown as { err: string };
+      throw new ServerActionError(cause?.err);
+    }
   }
-};
+);
 //endregion
 
 //region action login
