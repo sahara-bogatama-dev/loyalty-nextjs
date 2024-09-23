@@ -35,7 +35,6 @@ import { paginationListCampaign } from "./campaign/listCampaign.db";
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 
 //region action login
-
 const login = createServerAction(
   async ({ email, password }: { email: any; password: any }) => {
     try {
@@ -58,193 +57,201 @@ const login = createServerAction(
 //endregion
 
 //region action login
-const logout = async () => {
+const logout = createServerAction(async () => {
   await signOut({ redirect: true, redirectTo: "/" });
-};
+});
 //endregion
 
 //region list USer
-const userRoles = async ({ id }: { id: string }) => {
+const userRoles = createServerAction(async ({ id }: { id: string }) => {
   try {
     const detail = await userDetail({ id });
 
     return _.map(detail?.role, (o) => ({ role: o.id }));
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const createInternalUser = async ({
-  email,
-  phone,
-  dateofbirth,
-  leader,
-  fullname,
-  createdBy,
-}: {
-  email?: string;
-  phone?: string;
-  dateofbirth?: string;
-  leader?: string;
-  fullname?: string;
-  createdBy?: string;
-}) => {
-  try {
-    const start = moment(`2000-01-01`);
-    const end = moment(`${moment().year()}-12-31`);
+const createInternalUser = createServerAction(
+  async ({
+    email,
+    phone,
+    dateofbirth,
+    leader,
+    fullname,
+    createdBy,
+  }: {
+    email?: string;
+    phone?: string;
+    dateofbirth?: string;
+    leader?: string;
+    fullname?: string;
+    createdBy?: string;
+  }) => {
+    try {
+      const start = moment(`2000-01-01`);
+      const end = moment(`${moment().year()}-12-31`);
 
-    const randomDate = moment(start).add(
-      Math.random() * end.diff(start),
-      "milliseconds"
-    );
+      const randomDate = moment(start).add(
+        Math.random() * end.diff(start),
+        "milliseconds"
+      );
 
-    if (email) {
-      try {
-        const created = await createUser({
-          password: moment(randomDate).format("DDMMMMYYYY"),
-          fullname: fullname ?? "",
-          email: email ?? "",
-          phone: phone ?? "",
-          dateofbirth: dateofbirth ?? "",
-          leader,
-          createdBy,
-        });
+      if (email) {
+        try {
+          const created = await createUser({
+            password: moment(randomDate).format("DDMMMMYYYY"),
+            fullname: fullname ?? "",
+            email: email ?? "",
+            phone: phone ?? "",
+            dateofbirth: dateofbirth ?? "",
+            leader,
+            createdBy,
+          });
 
-        if (created) {
-          await sendMailer({
-            send: email,
-            subject: `${fullname} akun berhasil dibuat.`,
-            html: `<html>
+          if (created) {
+            await sendMailer({
+              send: email,
+              subject: `${fullname} akun berhasil dibuat.`,
+              html: `<html>
                 <span>berhasil ${moment(randomDate).format("DDMMMMYYYY")}</span>
               </html>`,
-          });
-        } else {
-          throw new Error("Try again later.");
+            });
+          } else {
+            throw new ServerActionError("Try again later.");
+          }
+        } catch (error: any) {
+          throw new ServerActionError(error.message);
         }
-      } catch (error: any) {
-        throw new Error(error.message);
       }
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
     }
-  } catch (error: any) {
-    throw new Error(error.message);
   }
-};
+);
 
-const paginationUser = async ({
-  take,
-  skip,
-}: {
-  take: number;
-  skip: number;
-}) => {
-  try {
-    const data = await paginationListUser({ take, skip });
+const paginationUser = createServerAction(
+  async ({ take, skip }: { take: number; skip: number }) => {
+    try {
+      const data = await paginationListUser({ take, skip });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const roleUser = async () => {
+const roleUser = createServerAction(async () => {
   try {
     const data = await listRole();
 
     return data;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const addRoles = async ({
-  id,
-  idRole,
-  idEdit,
-}: {
-  id: string;
-  idRole: string;
-  idEdit: string;
-}) => {
-  try {
-    const data = await addRole({ id, idRole, idEdit });
+const addRoles = createServerAction(
+  async ({
+    id,
+    idRole,
+    idEdit,
+  }: {
+    id: string;
+    idRole: string;
+    idEdit: string;
+  }) => {
+    try {
+      const data = await addRole({ id, idRole, idEdit });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const deleteRoles = async ({ id, idRole }: { id: string; idRole: string }) => {
-  try {
-    const data = await deleteRole({ id, idRole });
+const deleteRoles = createServerAction(
+  async ({ id, idRole }: { id: string; idRole: string }) => {
+    try {
+      const data = await deleteRole({ id, idRole });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const searchUsers = async ({ searchText }: { searchText: string }) => {
-  try {
-    const data = await searchUser({ findSearch: searchText });
+const searchUsers = createServerAction(
+  async ({ searchText }: { searchText: string }) => {
+    try {
+      const data = await searchUser({ findSearch: searchText });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const disableUsers = async ({
-  updatedBy,
-  disable,
-  idEdit,
-}: {
-  idEdit?: string;
-  updatedBy?: string;
-  disable?: boolean;
-}) => {
-  try {
-    const data = await disableUser({ updatedBy, idEdit, disable });
+const disableUsers = createServerAction(
+  async ({
+    updatedBy,
+    disable,
+    idEdit,
+  }: {
+    idEdit?: string;
+    updatedBy?: string;
+    disable?: boolean;
+  }) => {
+    try {
+      const data = await disableUser({ updatedBy, idEdit, disable });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const updateUsers = async ({
-  updatedBy,
-  idEdit,
-  fullname,
-  phone,
-  email,
-  bod,
-  leader,
-}: {
-  idEdit?: string;
-  updatedBy?: string;
-  fullname?: string;
-  phone?: string;
-  email?: string;
-  bod?: string;
-  leader?: string;
-}) => {
-  try {
-    const data = await updateUser({
-      updatedBy,
-      fullname,
-      phone,
-      email,
-      bod,
-      leader,
-      idEdit,
-    });
+const updateUsers = createServerAction(
+  async ({
+    updatedBy,
+    idEdit,
+    fullname,
+    phone,
+    email,
+    bod,
+    leader,
+  }: {
+    idEdit?: string;
+    updatedBy?: string;
+    fullname?: string;
+    phone?: string;
+    email?: string;
+    bod?: string;
+    leader?: string;
+  }) => {
+    try {
+      const data = await updateUser({
+        updatedBy,
+        fullname,
+        phone,
+        email,
+        bod,
+        leader,
+        idEdit,
+      });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
 export {
   login,
@@ -262,95 +269,95 @@ export {
 //endregion
 
 //region Product
-const listUnits = async () => {
+const listUnits = createServerAction(async () => {
   try {
     const data = await listUnit();
 
     return _.map(data, (o) => ({ value: o.name, label: o.name }));
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const addProducts = async ({
-  productCode,
-  productName,
-  weight,
-  basePoint,
-  unit,
-  expiredPeriod,
-  createdBy,
-}: {
-  productName: string;
-  productCode: string;
-  weight: number;
-  basePoint: number;
-  unit: string;
-  expiredPeriod: number;
-  createdBy: string;
-}) => {
-  try {
-    const data = await addProduct({
-      productCode,
-      productName,
-      weight,
-      basePoint,
-      unit,
-      expiredPeriod,
-      createdBy,
-    });
+const addProducts = createServerAction(
+  async ({
+    productCode,
+    productName,
+    weight,
+    basePoint,
+    unit,
+    expiredPeriod,
+    createdBy,
+  }: {
+    productName: string;
+    productCode: string;
+    weight: number;
+    basePoint: number;
+    unit: string;
+    expiredPeriod: number;
+    createdBy: string;
+  }) => {
+    try {
+      const data = await addProduct({
+        productCode,
+        productName,
+        weight,
+        basePoint,
+        unit,
+        expiredPeriod,
+        createdBy,
+      });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const paginationProduct = async ({
-  take,
-  skip,
-}: {
-  take: number;
-  skip: number;
-}) => {
-  try {
-    const data = await paginationListProduct({ take, skip });
+const paginationProduct = createServerAction(
+  async ({ take, skip }: { take: number; skip: number }) => {
+    try {
+      const data = await paginationListProduct({ take, skip });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const downloadProducts = async () => {
+const downloadProducts = createServerAction(async () => {
   try {
     const data = await downloadProduct();
 
     return data;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const uploadProduct = async ({ data }: { data: any }) => {
+const uploadProduct = createServerAction(async ({ data }: { data: any }) => {
   try {
     const productUpload = await batchUploadProduct({ data });
 
     return productUpload;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const searchProducts = async ({ searchText }: { searchText: string }) => {
-  try {
-    const data = await searchProduct({ findSearch: searchText });
+const searchProducts = createServerAction(
+  async ({ searchText }: { searchText: string }) => {
+    try {
+      const data = await searchProduct({ findSearch: searchText });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
 export {
   listUnits,
@@ -363,7 +370,7 @@ export {
 //endregion
 
 //region Campaign
-const listProducts = async () => {
+const listProducts = createServerAction(async () => {
   try {
     const data = await listProduct();
 
@@ -372,155 +379,165 @@ const listProducts = async () => {
       label: `${o.productCode} - ${o.productName}`,
     }));
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const currentProducts = async ({ campaignId }: { campaignId: string }) => {
-  try {
-    const data = await currentProduct({ campaignId });
+const currentProducts = createServerAction(
+  async ({ campaignId }: { campaignId: string }) => {
+    try {
+      const data = await currentProduct({ campaignId });
 
-    return _.map(data, (o) => ({
-      value: o.productId,
-      label: `${o.productCode} - ${o.productName}`,
-    }));
-  } catch (error: any) {
-    throw new Error(error.message);
+      const finalData = _.map(data, (o) => ({
+        value: o.productId,
+        label: `${o.productCode} - ${o.productName}`,
+      }));
+
+      return finalData;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const addCampaigns = async ({
-  campaignName,
-  startDate,
-  endDate,
-  productId,
-  loyaltyPoint,
-  image,
-  description,
-  createdBy,
-}: {
-  campaignName: string;
-  startDate: string;
-  endDate: string;
-  productId: string[];
-  loyaltyPoint: number;
-  image: any;
-  description: string;
-  createdBy: string;
-}) => {
-  try {
-    const data = await addCampaign({
-      campaignName,
-      startDate,
-      endDate,
-      description,
-      productId,
-      loyaltyPoint,
-      createdBy,
-      image: Buffer.from(image, "base64"),
-    });
+const addCampaigns = createServerAction(
+  async ({
+    campaignName,
+    startDate,
+    endDate,
+    productId,
+    loyaltyPoint,
+    image,
+    description,
+    createdBy,
+  }: {
+    campaignName: string;
+    startDate: string;
+    endDate: string;
+    productId: string[];
+    loyaltyPoint: number;
+    image: any;
+    description: string;
+    createdBy: string;
+  }) => {
+    try {
+      const data = await addCampaign({
+        campaignName,
+        startDate,
+        endDate,
+        description,
+        productId,
+        loyaltyPoint,
+        createdBy,
+        image: Buffer.from(image, "base64"),
+      });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const updateCampaigns = async ({
-  campaignName,
-  productId,
-  oldProductId,
-  startDate,
-  endDate,
-  image,
-  loyaltyPoint,
-  description,
-  campaignId,
-  updatedBy,
-}: Campaigns) => {
-  try {
-    const data = await updateCampaign({
-      campaignName,
-      productId,
-      oldProductId,
-      startDate,
-      endDate,
-      image: image ? Buffer.from(image, "base64") : undefined,
-      loyaltyPoint,
-      description,
-      campaignId,
-      updatedBy,
-    });
+const updateCampaigns = createServerAction(
+  async ({
+    campaignName,
+    productId,
+    oldProductId,
+    startDate,
+    endDate,
+    image,
+    loyaltyPoint,
+    description,
+    campaignId,
+    updatedBy,
+  }: Campaigns) => {
+    try {
+      const data = await updateCampaign({
+        campaignName,
+        productId,
+        oldProductId,
+        startDate,
+        endDate,
+        image: image ? Buffer.from(image, "base64") : undefined,
+        loyaltyPoint,
+        description,
+        campaignId,
+        updatedBy,
+      });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const listCampaignActives = async () => {
+const listCampaignActives = createServerAction(async () => {
   try {
     const data = await listCampaignActive();
 
     return data;
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new ServerActionError(error.message);
   }
-};
+});
 
-const paginationCampaign = async ({
-  take,
-  skip,
-}: {
-  take: number;
-  skip: number;
-}) => {
-  try {
-    const data = await paginationListCampaign({ take, skip });
+const paginationCampaign = createServerAction(
+  async ({ take, skip }: { take: number; skip: number }) => {
+    try {
+      const data = await paginationListCampaign({ take, skip });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const searchCampaigns = async ({ searchText }: { searchText: string }) => {
-  try {
-    const data = await searchCampaign({ findSearch: searchText });
+const searchCampaigns = createServerAction(
+  async ({ searchText }: { searchText: string }) => {
+    try {
+      const data = await searchCampaign({ findSearch: searchText });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const disableCampaigns = async ({
-  updatedBy,
-  disable,
-  idEdit,
-}: {
-  idEdit?: string;
-  updatedBy?: string;
-  disable?: boolean;
-}) => {
-  try {
-    const data = await disableCampaign({ updatedBy, idEdit, disable });
+const disableCampaigns = createServerAction(
+  async ({
+    updatedBy,
+    disable,
+    idEdit,
+  }: {
+    idEdit?: string;
+    updatedBy?: string;
+    disable?: boolean;
+  }) => {
+    try {
+      const data = await disableCampaign({ updatedBy, idEdit, disable });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
-const deleteCampaigns = async ({ idEdit }: { idEdit?: string }) => {
-  try {
-    const data = await deleteCampaign({ idEdit });
+const deleteCampaigns = createServerAction(
+  async ({ idEdit }: { idEdit?: string }) => {
+    try {
+      const data = await deleteCampaign({ idEdit });
 
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-};
+);
 
 export {
   listProducts,

@@ -79,15 +79,26 @@ export default function Home() {
     setIsFormFilled(anyFilled);
   };
 
-  const fetchUser = async ({ take, skip }: { skip: number; take: number }) => {
-    const user = await paginationUser({ take, skip });
-    setUserList(user.result as any);
-    setTotalPage(Math.ceil(user.count / 100));
-  };
+  const fetchUser = React.useCallback(
+    async ({ take, skip }: { skip: number; take: number }) => {
+      const user = await paginationUser({ take, skip });
+
+      if (user.success) {
+        setUserList(user.value.result as any);
+        setTotalPage(Math.ceil(user.value.count / 100));
+      } else {
+        messageApi.open({
+          type: "error",
+          content: user.error,
+        });
+      }
+    },
+    [messageApi]
+  );
 
   React.useEffect(() => {
     fetchUser({ take: 100, skip: 0 });
-  }, []);
+  }, [fetchUser]);
 
   return (
     <Layout>
@@ -130,10 +141,10 @@ export default function Home() {
                   name="createUser"
                   className="gap-10"
                   form={addForm}
-                  onFinish={(value) => {
+                  onFinish={async (value) => {
                     try {
                       setLoading(true);
-                      createInternalUser({
+                      const createUser = await createInternalUser({
                         email: value.email,
                         fullname: value.fullname,
                         dateofbirth: dayjs(value.dateofbirth).format(
@@ -142,26 +153,25 @@ export default function Home() {
                         phone: value.phone,
                         leader: value.leader,
                         createdBy: session?.user?.name ?? undefined,
-                      })
-                        .catch((e) => {
-                          messageApi.open({
-                            type: "error",
-                            content: e.message,
-                          });
-                        })
-                        .finally(() => {
-                          setLoading(false);
-                          fetchUser({
-                            skip: Math.max(0, (currentPage - 1) * 100),
-                            take: 100,
-                          });
-                          addForm.resetFields();
+                      });
 
-                          messageApi.open({
-                            type: "success",
-                            content: "Akun sudah dibuat. Silahkan check email.",
-                          });
+                      if (createUser.success) {
+                        fetchUser({
+                          skip: Math.max(0, (currentPage - 1) * 100),
+                          take: 100,
                         });
+                        addForm.resetFields();
+                        messageApi.open({
+                          type: "success",
+                          content: "Akun sudah dibuat. Silahkan check email.",
+                        });
+                      } else {
+                        messageApi.open({
+                          type: "error",
+                          content: createUser.error,
+                        });
+                      }
+                      setLoading(false);
                     } catch (e: any) {
                       messageApi.open({
                         type: "error",
@@ -259,24 +269,25 @@ export default function Home() {
             <Form
               name="searchForm"
               layout="inline"
-              onFinish={(value) => {
+              onFinish={async (value) => {
                 setLoading(true);
-                searchUsers({ searchText: value.search })
-                  .then((value) => {
-                    setUserList(value);
-                    setTotalPage(0);
-                    setCurrentPage(0);
-                  })
 
-                  .catch((e) => {
-                    messageApi.open({
-                      type: "error",
-                      content: e.message,
-                    });
-                  })
-                  .finally(() => {
-                    setLoading(false);
+                const searchUser = await searchUsers({
+                  searchText: value.search,
+                });
+
+                if (searchUser.success) {
+                  setUserList(searchUser.value);
+                  setTotalPage(0);
+                  setCurrentPage(0);
+                } else {
+                  messageApi.open({
+                    type: "error",
+                    content: searchUser.error,
                   });
+                }
+
+                setLoading(false);
               }}
               autoComplete="off"
               className="my-2"
@@ -358,23 +369,25 @@ export default function Home() {
                       <GridActionsCellItem
                         key={params.id.toString()}
                         icon={<PiUserGearFill />}
-                        onClick={() => {
+                        onClick={async () => {
                           setIdEdit(params.id.toString());
                           setRole(params.row.role);
                           rolesForm.setFieldsValue({
                             userIdRoles: params.id.toString(),
                           });
+
                           setIsModalRoleOpen(true);
-                          roleUser()
-                            .then((value) => {
-                              setListRole(value.result as any);
-                            })
-                            .catch((e) => {
-                              messageApi.open({
-                                type: "error",
-                                content: e.message,
-                              });
+
+                          const listRole = await roleUser();
+
+                          if (listRole.success) {
+                            setListRole(listRole.value.result);
+                          } else {
+                            messageApi.open({
+                              type: "error",
+                              content: listRole.error,
                             });
+                          }
                         }}
                         label="Role"
                         showInMenu
@@ -382,24 +395,24 @@ export default function Home() {
                       <GridActionsCellItem
                         key={params.id.toString()}
                         icon={<MdDisabledByDefault />}
-                        onClick={() => {
-                          disableUsers({
+                        onClick={async () => {
+                          const disableUser = await disableUsers({
                             updatedBy: session?.user?.name ?? undefined,
                             idEdit: params.id.toString(),
                             disable: !params.row.inActive,
-                          })
-                            .then(() => {
-                              fetchUser({
-                                skip: Math.max(0, (currentPage - 1) * 100),
-                                take: 100,
-                              });
-                            })
-                            .catch((e) => {
-                              messageApi.open({
-                                type: "error",
-                                content: e.message,
-                              });
+                          });
+
+                          if (disableUser.success) {
+                            fetchUser({
+                              skip: Math.max(0, (currentPage - 1) * 100),
+                              take: 100,
                             });
+                          } else {
+                            messageApi.open({
+                              type: "error",
+                              content: disableUser.error,
+                            });
+                          }
                         }}
                         label={`${params.row.inActive ? "Enable" : "Disable"}`}
                         showInMenu
@@ -539,9 +552,9 @@ export default function Home() {
           form={editForm}
           labelCol={{ span: 24 }}
           wrapperCol={{ span: 24 }}
-          onFinish={(value) => {
+          onFinish={async (value) => {
             setLoading(true);
-            updateUsers({
+            const userUpdate = await updateUsers({
               idEdit: value.userId,
               updatedBy: session?.user?.name ?? undefined,
               fullname: value.fullname,
@@ -549,28 +562,27 @@ export default function Home() {
               email: value.email,
               leader: value.leader,
               bod: dayjs(value.dateofbirth).format("DD-MM-YYYY"),
-            })
-              .then(() => {
-                fetchUser({
-                  skip: Math.max(0, (currentPage - 1) * 100),
-                  take: 100,
-                });
-              })
-              .catch((e) => {
-                messageApi.open({
-                  type: "error",
-                  content: e.message,
-                });
-              })
-              .finally(() => {
-                setLoading(false);
-                editForm.resetFields();
-                setIsModalEditOpen(false);
-                messageApi.open({
-                  type: "success",
-                  content: "Update berhasil.",
-                });
+            });
+
+            if (userUpdate.success) {
+              fetchUser({
+                skip: Math.max(0, (currentPage - 1) * 100),
+                take: 100,
               });
+              editForm.resetFields();
+              setIsModalEditOpen(false);
+              messageApi.open({
+                type: "success",
+                content: "Update berhasil.",
+              });
+            } else {
+              messageApi.open({
+                type: "error",
+                content: userUpdate.error,
+              });
+            }
+
+            setLoading(false);
           }}
           autoComplete="off"
           onValuesChange={onValuesChange}
@@ -656,28 +668,27 @@ export default function Home() {
             labelCol={{ span: 16 }}
             wrapperCol={{ span: 24 }}
             form={rolesForm}
-            onFinish={(value) => {
+            onFinish={async (value) => {
               setLoading(true);
-              addRoles({
+
+              const addRole = await addRoles({
                 idRole: value.roles,
                 id: session?.user?.id as string,
                 idEdit: value.userIdRoles,
-              })
-                .then((value) => {
-                  setRole((prevRoles) => [
-                    ...prevRoles,
-                    { id: value.id, name: value.name },
-                  ]);
-                })
-                .catch((e) => {
-                  messageApi.open({
-                    type: "error",
-                    content: e.message,
-                  });
-                })
-                .finally(() => {
-                  setLoading(false);
+              });
+
+              if (addRole.success) {
+                setRole((prevRoles) => [
+                  ...prevRoles,
+                  { id: value.id, name: value.name },
+                ]);
+              } else {
+                messageApi.open({
+                  type: "error",
+                  content: addRole.error,
                 });
+              }
+              setLoading(false);
             }}
             autoComplete="off"
           >

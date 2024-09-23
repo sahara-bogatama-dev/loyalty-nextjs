@@ -221,12 +221,19 @@ export default function SideBar({
   React.useEffect(() => {
     const setMenu = async () => {
       try {
-        console.log(session, "not sessios");
         if (session) {
           const roles = await userRoles({ id: session?.user?.id as string });
-          const arrayRoles = _.map(roles, "role");
-          const filtered = filterMenuByRole(defaultMenu, arrayRoles);
-          setMenuList(filtered);
+
+          if (roles.success) {
+            const arrayRoles = _.map(roles.value, "role");
+            const filtered = filterMenuByRole(defaultMenu, arrayRoles);
+            setMenuList(filtered);
+          } else {
+            messageApi.open({
+              type: "error",
+              content: roles.error,
+            });
+          }
 
           const { protocol, hostname, port } = window.location;
           setBaseUrl(`${protocol}//${hostname}${port ? `:${port}` : ""}`);

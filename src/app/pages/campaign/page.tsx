@@ -76,22 +76,34 @@ export default function Home() {
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isModalEditOpen, setIsModalEditOpen] = React.useState(false);
 
-  const fetchCampaign = async ({
-    take,
-    skip,
-  }: {
-    skip: number;
-    take: number;
-  }) => {
-    const campaign = await paginationCampaign({ take, skip });
-    setCampaignList(campaign.result as any);
-    setTotalPage(Math.ceil(campaign.count / 100));
-  };
+  const fetchCampaign = React.useCallback(
+    async ({ take, skip }: { skip: number; take: number }) => {
+      const campaign = await paginationCampaign({ take, skip });
+      if (campaign.success) {
+        setCampaignList(campaign.value.result as any);
+        setTotalPage(Math.ceil(campaign.value.count / 100));
+      } else {
+        messageApi.open({
+          type: "error",
+          content: campaign.error,
+        });
+      }
+    },
+    [messageApi]
+  );
 
-  const fetchProduct = async () => {
+  const fetchProduct = React.useCallback(async () => {
     const units = await listProducts();
-    setProductList(units);
-  };
+
+    if (units.success) {
+      setProductList(units.value);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: units.error,
+      });
+    }
+  }, [messageApi]);
 
   React.useEffect(() => {
     fetchCampaign({
@@ -102,7 +114,7 @@ export default function Home() {
 
     const { protocol, hostname, port } = window.location;
     setBaseUrl(`${protocol}//${hostname}${port ? `:${port}` : ""}`);
-  }, []);
+  }, [fetchCampaign, fetchProduct]);
 
   const validateFile = async (file: RcFile) => {
     const maxSize = 500 * 1024;
@@ -208,7 +220,8 @@ export default function Home() {
                       )) as string;
 
                       setLoading(true);
-                      addCampaigns({
+
+                      const createdCampaign = await addCampaigns({
                         campaignName: value.campaignName,
                         startDate: dayjs(value.dateRange[0]).toISOString(),
                         endDate: dayjs(value.dateRange[1]).toISOString(),
@@ -220,28 +233,27 @@ export default function Home() {
                           /^data:image\/[a-z]+;base64,/,
                           ""
                         ),
-                      })
-                        .then(() => {
-                          messageApi.open({
-                            type: "success",
-                            content: "Campaign sudah ditambahkan.",
-                          });
-                        })
-                        .catch((e) => {
-                          messageApi.open({
-                            type: "error",
-                            content: e.message,
-                          });
-                        })
-                        .finally(() => {
-                          setLoading(false);
-                          fetchProduct();
-                          addForm.resetFields();
-                          fetchCampaign({
-                            skip: 0,
-                            take: 100,
-                          });
+                      });
+
+                      if (createdCampaign.success) {
+                        messageApi.open({
+                          type: "success",
+                          content: "Campaign sudah ditambahkan.",
                         });
+
+                        fetchProduct();
+                        addForm.resetFields();
+                        fetchCampaign({
+                          skip: 0,
+                          take: 100,
+                        });
+                      } else {
+                        messageApi.open({
+                          type: "error",
+                          content: createdCampaign.error,
+                        });
+                      }
+                      setLoading(false);
                     } catch (e: any) {
                       messageApi.open({
                         type: "error",
@@ -393,23 +405,23 @@ export default function Home() {
             <Form
               name="searchForm"
               layout="inline"
-              onFinish={(value) => {
+              onFinish={async (value) => {
                 setLoading(true);
-                searchCampaigns({ searchText: value.search })
-                  .then((value) => {
-                    setCampaignList(value);
-                    setTotalPage(0);
-                    setCurrentPage(0);
-                  })
-                  .catch((e) => {
-                    messageApi.open({
-                      type: "error",
-                      content: e.message,
-                    });
-                  })
-                  .finally(() => {
-                    setLoading(false);
+                const search = await searchCampaigns({
+                  searchText: value.search,
+                });
+
+                if (search.success) {
+                  setCampaignList(search.value);
+                  setTotalPage(0);
+                  setCurrentPage(0);
+                } else {
+                  messageApi.open({
+                    type: "error",
+                    content: search.error,
                   });
+                }
+                setLoading(false);
               }}
               autoComplete="off"
               className="my-2"
@@ -491,28 +503,31 @@ export default function Home() {
                           setLoadingModal(true);
                           setIsModalEditOpen(true);
 
-                          fetchProduct().finally(() => {
-                            currentProducts({
+                          fetchProduct().finally(async () => {
+                            const productCampaign = await currentProducts({
                               campaignId: params.id.toString(),
-                            })
-                              .then((value: any) => {
-                                setProductOldList(value);
-                                editForm.setFieldsValue({
-                                  selectProduct: value,
-                                });
-                                setProductCombList(
-                                  _.concat(productList, value)
-                                );
-                              })
-                              .catch((e) => {
-                                messageApi.open({
-                                  type: "error",
-                                  content: e.message,
-                                });
-                              })
-                              .finally(() => {
-                                setLoadingModal(false);
+                            });
+
+                            if (productCampaign.success) {
+                              setProductOldList(productCampaign.value);
+
+                              editForm.setFieldsValue({
+                                selectProduct: productCampaign.value,
                               });
+
+                              setProductOldList(productCampaign.value);
+
+                              setProductCombList(
+                                _.concat(productList, productCampaign.value)
+                              );
+                            } else {
+                              messageApi.open({
+                                type: "error",
+                                content: productCampaign.error,
+                              });
+                            }
+
+                            setLoadingModal(false);
                           });
                           editForm.setFieldsValue({
                             campaignName: params.row.campaignName,
@@ -532,24 +547,24 @@ export default function Home() {
                       <GridActionsCellItem
                         key={params.id.toString()}
                         icon={<MdDisabledByDefault />}
-                        onClick={() => {
-                          disableCampaigns({
+                        onClick={async () => {
+                          const disableCampaign = await disableCampaigns({
                             updatedBy: session?.user?.name ?? undefined,
                             idEdit: params.id.toString(),
                             disable: !params.row.inActive,
-                          })
-                            .then(() => {
-                              fetchCampaign({
-                                skip: Math.max(0, (currentPage - 1) * 100),
-                                take: 100,
-                              });
-                            })
-                            .catch((e) => {
-                              messageApi.open({
-                                type: "error",
-                                content: e.message,
-                              });
+                          });
+
+                          if (disableCampaign.success) {
+                            fetchCampaign({
+                              skip: Math.max(0, (currentPage - 1) * 100),
+                              take: 100,
                             });
+                          } else {
+                            messageApi.open({
+                              type: "error",
+                              content: disableCampaign.error,
+                            });
+                          }
                         }}
                         label={`${params.row.inActive ? "Enable" : "Disable"}`}
                         showInMenu
@@ -557,23 +572,22 @@ export default function Home() {
                       <GridActionsCellItem
                         key={params.id.toString()}
                         icon={<FaTrash />}
-                        onClick={() => {
-                          deleteCampaigns({
+                        onClick={async () => {
+                          const deleteCampaign = await deleteCampaigns({
                             idEdit: params.id.toString(),
-                          })
-                            .then(() => {
-                              fetchCampaign({
-                                skip: Math.max(0, (currentPage - 1) * 100),
-                                take: 100,
-                              });
-                              fetchProduct();
-                            })
-                            .catch((e) => {
-                              messageApi.open({
-                                type: "error",
-                                content: e.message,
-                              });
+                          });
+
+                          if (deleteCampaign.success) {
+                            fetchCampaign({
+                              skip: Math.max(0, (currentPage - 1) * 100),
+                              take: 100,
                             });
+                          } else {
+                            messageApi.open({
+                              type: "error",
+                              content: deleteCampaign.error,
+                            });
+                          }
                         }}
                         label="Delete"
                         showInMenu
@@ -731,7 +745,7 @@ export default function Home() {
                   : ((await getBase64(value.addImg.file)) as string)
                 : undefined;
 
-              updateCampaigns({
+              const updateCampaign = await updateCampaigns({
                 campaignId: value.campaignId,
                 campaignName: value.campaignName,
                 startDate: dayjs(value.dateRange[0]).toISOString(),
@@ -747,28 +761,28 @@ export default function Home() {
                 loyaltyPoint: value.point,
                 updatedBy: session?.user?.name ?? "",
                 image: base64?.replace(/^data:image\/[a-z]+;base64,/, ""),
-              })
-                .then(() => {
-                  fetchCampaign({
-                    skip: Math.max(0, (currentPage - 1) * 100),
-                    take: 100,
-                  });
-                  fetchProduct();
-                })
-                .catch((e) => {
-                  messageApi.open({
-                    type: "error",
-                    content: e.message,
-                  });
-                })
-                .finally(() => {
-                  setLoading(false);
-                  setIsModalEditOpen(false);
-                  messageApi.open({
-                    type: "success",
-                    content: "Berhasil di update.",
-                  });
+              });
+
+              if (updateCampaign.success) {
+                fetchCampaign({
+                  skip: Math.max(0, (currentPage - 1) * 100),
+                  take: 100,
                 });
+                fetchProduct();
+
+                messageApi.open({
+                  type: "success",
+                  content: "Berhasil di update.",
+                });
+              } else {
+                messageApi.open({
+                  type: "error",
+                  content: updateCampaign.error,
+                });
+              }
+
+              setLoading(false);
+              setIsModalEditOpen(false);
             } catch (e: any) {
               messageApi.open({
                 type: "error",

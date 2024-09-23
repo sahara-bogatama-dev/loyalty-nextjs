@@ -51,22 +51,35 @@ export default function Home() {
   const [totalPage, setTotalPage] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
 
-  const fetchProduct = async ({
-    take,
-    skip,
-  }: {
-    skip: number;
-    take: number;
-  }) => {
-    const product = await paginationProduct({ take, skip });
-    setProductList(product.result as any);
-    setTotalPage(Math.ceil(product.count / 100));
-  };
+  const fetchProduct = React.useCallback(
+    async ({ take, skip }: { skip: number; take: number }) => {
+      const product = await paginationProduct({ take, skip });
 
-  const fetchUnit = async () => {
+      if (product.success) {
+        setProductList(product.value.result as any);
+        setTotalPage(Math.ceil(product.value.count / 100));
+      } else {
+        messageApi.open({
+          type: "error",
+          content: product.error,
+        });
+      }
+    },
+    [messageApi]
+  );
+
+  const fetchUnit = React.useCallback(async () => {
     const units = await listUnits();
-    setUnit(units);
-  };
+
+    if (units.success) {
+      setUnit(units.value);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: units.error,
+      });
+    }
+  }, [messageApi]);
 
   React.useEffect(() => {
     fetchUnit();
@@ -74,7 +87,7 @@ export default function Home() {
       skip: 0,
       take: 100,
     });
-  }, []);
+  }, [fetchProduct, fetchUnit]);
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
@@ -99,55 +112,60 @@ export default function Home() {
 
   const exportProduct = async () => {
     const allProduct = await downloadProducts();
-    const ws = XLSX.utils.json_to_sheet(allProduct);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(
-      wb,
-      `Sahara Product ${moment().format("DD-MM-YYYY")}-${
-        Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
-      }.xlsx`
-    );
+
+    if (allProduct.success) {
+      const ws = XLSX.utils.json_to_sheet(allProduct.value);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      XLSX.writeFile(
+        wb,
+        `Sahara Product ${moment().format("DD-MM-YYYY")}-${
+          Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
+        }.xlsx`
+      );
+    } else {
+      messageApi.open({
+        type: "error",
+        content: allProduct.error,
+      });
+    }
   };
 
   const handleFileChange: UploadProps["onChange"] = (info) => {
     if (info.file.status === "done") {
-      // File has been uploaded successfully
       const file = info.file.originFileObj;
       if (file) {
         setLoading(true);
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: "array" });
 
-          // Assuming you want to read the first sheet
           const sheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
           const json = XLSX.utils.sheet_to_json(sheet);
 
-          uploadProduct({
+          const uploadProd = await uploadProduct({
             data: _.map(json, (o: any) => ({
               ...o,
               expiredPeriod: moment().add(o.expiredPeriod, "days").toDate(),
               createdBy: session?.user?.name,
             })),
-          })
-            .then(() => {
-              fetchProduct({
-                skip: Math.max(0, (currentPage - 1) * 100),
-                take: 100,
-              });
-            })
-            .catch((e) => {
-              messageApi.open({
-                type: "error",
-                content: e.message,
-              });
-            })
-            .finally(() => {
-              setLoading(false);
+          });
+
+          if (uploadProd.success) {
+            fetchProduct({
+              skip: Math.max(0, (currentPage - 1) * 100),
+              take: 100,
             });
+          } else {
+            messageApi.open({
+              type: "error",
+              content: uploadProd.error,
+            });
+          }
+
+          setLoading(false);
         };
 
         reader.readAsArrayBuffer(file);
@@ -201,10 +219,11 @@ export default function Home() {
                   name="addProduct"
                   className="gap-10"
                   initialValues={{}}
-                  onFinish={(value) => {
+                  onFinish={async (value) => {
                     try {
                       setLoading(true);
-                      addProducts({
+
+                      const addProd = await addProducts({
                         productCode: value.productCode,
                         productName: value.productName,
                         weight: value.weight,
@@ -212,26 +231,24 @@ export default function Home() {
                         unit: value.pack,
                         expiredPeriod: value.expPeriod,
                         createdBy: session?.user?.name ?? "",
-                      })
-                        .then((value) => {
-                          fetchProduct({
-                            skip: Math.max(0, (currentPage - 1) * 100),
-                            take: 100,
-                          });
-                          messageApi.open({
-                            type: "success",
-                            content: "Product sudah di tambahkan.",
-                          });
-                        })
-                        .catch((e) => {
-                          messageApi.open({
-                            type: "error",
-                            content: e.message,
-                          });
-                        })
-                        .finally(() => {
-                          setLoading(false);
+                      });
+
+                      if (addProd.success) {
+                        fetchProduct({
+                          skip: Math.max(0, (currentPage - 1) * 100),
+                          take: 100,
                         });
+                        messageApi.open({
+                          type: "success",
+                          content: "Product sudah di tambahkan.",
+                        });
+                      } else {
+                        messageApi.open({
+                          type: "error",
+                          content: addProd.success,
+                        });
+                      }
+                      setLoading(false);
                     } catch (e: any) {
                       messageApi.open({
                         type: "error",
@@ -361,24 +378,23 @@ export default function Home() {
             <Form
               name="searchForm"
               layout="inline"
-              onFinish={(value) => {
+              onFinish={async (value) => {
                 setLoading(true);
-                searchProducts({ searchText: value.search })
-                  .then((value) => {
-                    setProductList(value);
-                    setTotalPage(0);
-                    setCurrentPage(0);
-                  })
+                const searchProduct = await searchProducts({
+                  searchText: value.search,
+                });
 
-                  .catch((e) => {
-                    messageApi.open({
-                      type: "error",
-                      content: e.message,
-                    });
-                  })
-                  .finally(() => {
-                    setLoading(false);
+                if (searchProduct.success) {
+                  setProductList(value);
+                  setTotalPage(0);
+                  setCurrentPage(0);
+                } else {
+                  messageApi.open({
+                    type: "error",
+                    content: searchProduct.error,
                   });
+                }
+                setLoading(false);
               }}
               autoComplete="off"
               className="my-2"
@@ -519,7 +535,7 @@ export default function Home() {
                     minWidth: 250,
                     type: "dateTime",
                     valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY"),
+                      moment(params).format("DD/MM/YYYY"),
                     headerAlign: "center",
                     editable: false,
                   },
@@ -538,7 +554,7 @@ export default function Home() {
                     editable: false,
                     type: "dateTime",
                     valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                   {
                     field: "updatedBy",
@@ -555,7 +571,7 @@ export default function Home() {
                     editable: false,
                     type: "dateTime",
                     valueFormatter: (params: any) =>
-                      moment(params?.value).format("DD/MM/YYYY hh:mm"),
+                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                 ]}
               />

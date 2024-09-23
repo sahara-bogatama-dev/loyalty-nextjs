@@ -31,7 +31,7 @@ import {
 
 export default function Home() {
   const { Content } = Layout;
-  const chartRef = React.useRef<HTMLCanvasElement | null>(null);
+
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -43,11 +43,19 @@ export default function Home() {
   const [loadingCampaign, setLoadingCampaign] = React.useState(false);
   const [activeCampaign, setActiveCampaign] = React.useState<any>([]);
 
-  const fetchCampaign = async () => {
+  const fetchCampaign = React.useCallback(async () => {
     setLoadingCampaign(true);
     const campaign = await listCampaignActives();
-    setActiveCampaign(campaign);
-  };
+
+    if (campaign.success) {
+      setActiveCampaign(campaign.value);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: campaign.error,
+      });
+    }
+  }, [messageApi]);
 
   React.useEffect(() => {
     const { protocol, hostname, port } = window.location;
@@ -56,10 +64,11 @@ export default function Home() {
     fetchCampaign().finally(() => {
       setLoadingCampaign(false);
     });
-  }, []);
+  }, [fetchCampaign]);
 
   return (
     <Layout>
+      {contextHolder}
       <SideBar
         collapsed={collapsed}
         onBreakpoint={(broken) => {

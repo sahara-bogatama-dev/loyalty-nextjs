@@ -164,3 +164,20 @@ model Campaign {
 
   @@index([campaignId])
 }
+
+model Agent {
+  agentId       String     @id @default(cuid())
+  storeAddress  String     @db.VarChar(1000)
+  customerName  String     @unique(map: "customerName") @db.VarChar(255)
+  email         String     @db.VarChar(255)
+  noNpwp        String?    @db.VarChar(50)
+  phone         String     @db.VarChar(255)
+  picName       String     @db.VarChar(255)
+  picPhone      String     @db.VarChar(255)
+  createdBy     String            @default("bySystem") @db.VarChar(255)
+  updatedBy     String            @default("bySystem") @db.VarChar(255)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([agentId])
+}
