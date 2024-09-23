@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { ReactNode } from "react";
 import {
   Button,
   Layout,
@@ -50,7 +50,7 @@ import "react-photo-view/dist/react-photo-view.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { MdDisabledByDefault } from "react-icons/md";
 import dayjs from "dayjs";
-import InputMask from "react-input-mask";
+import InputMask, { Props as InputMaskProps } from "react-input-mask";
 
 export default function Home() {
   const { Content } = Layout;
@@ -176,11 +176,7 @@ export default function Home() {
                             message: "Please input your NPWP!",
                           },
                         ]}
-                      >
-                        <InputMask mask="99.999.999.9-999.999">
-                          {(inputProps: any) => <Input {...inputProps} />}
-                        </InputMask>
-                      </Form.Item>
+                      ></Form.Item>
                     </Col>
 
                     <Col className="gutter-row" xs={24} md={12} xl={8}>
@@ -193,16 +189,7 @@ export default function Home() {
                             message: "Please input your phone agent!",
                           },
                         ]}
-                      >
-                        <InputMask mask="(999) 9999999999999">
-                          {(inputProps: any) => (
-                            <Input
-                              {...inputProps}
-                              placeholder="081xxxxxx/021xxxxxxx"
-                            />
-                          )}
-                        </InputMask>
-                      </Form.Item>
+                      ></Form.Item>
                     </Col>
 
                     <Col className="gutter-row" xs={24} md={12} xl={8}>
@@ -253,16 +240,7 @@ export default function Home() {
                             message: "Please input your PIC no. handphone!",
                           },
                         ]}
-                      >
-                        <InputMask mask="(999) 9999999999999">
-                          {(inputProps: any) => (
-                            <Input
-                              {...inputProps}
-                              placeholder="081xxxxxx/021xxxxxxx"
-                            />
-                          )}
-                        </InputMask>
-                      </Form.Item>
+                      ></Form.Item>
                     </Col>
                   </Row>
 
