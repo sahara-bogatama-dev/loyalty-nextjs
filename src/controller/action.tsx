@@ -33,6 +33,14 @@ import {
 } from "./campaign/crudCampaign.db";
 import { paginationListCampaign } from "./campaign/listCampaign.db";
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
+import {
+  addAgent,
+  Agents,
+  downloadAgent,
+  searchAgent,
+  updateAgent,
+} from "./agent/crudAgent.db";
+import { paginationListAgent } from "./agent/listAgent.db";
 
 //region action login
 const login = createServerAction(
@@ -56,13 +64,13 @@ const login = createServerAction(
 );
 //endregion
 
-//region action login
+//region action logout
 const logout = createServerAction(async () => {
   await signOut({ redirect: true, redirectTo: "/" });
 });
 //endregion
 
-//region list USer
+//region list User
 const userRoles = createServerAction(async ({ id }: { id: string }) => {
   try {
     const detail = await userDetail({ id });
@@ -268,7 +276,7 @@ export {
 };
 //endregion
 
-//region Product
+//region product
 const listUnits = createServerAction(async () => {
   try {
     const data = await listUnit();
@@ -369,7 +377,7 @@ export {
 };
 //endregion
 
-//region Campaign
+//region campaign
 const listProducts = createServerAction(async () => {
   try {
     const data = await listProduct();
@@ -549,5 +557,112 @@ export {
   updateCampaigns,
   deleteCampaigns,
   listCampaignActives,
+};
+//endregion
+
+//region agent
+
+const addAgents = createServerAction(
+  async ({
+    noNpwp,
+    email,
+    phone,
+    picName,
+    picPhone,
+    customerName,
+    createdBy,
+    storeAddress,
+  }: Agents) => {
+    try {
+      const data = await addAgent({
+        noNpwp,
+        email,
+        phone,
+        picName,
+        picPhone,
+        customerName,
+        createdBy,
+        storeAddress,
+      });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const updateAgents = createServerAction(
+  async ({
+    agentId,
+    noNpwp,
+    email,
+    phone,
+    picName,
+    picPhone,
+    customerName,
+    updatedBy,
+    storeAddress,
+  }: Agents) => {
+    try {
+      const data = await updateAgent({
+        agentId,
+        noNpwp,
+        email,
+        phone,
+        picName,
+        picPhone,
+        customerName,
+        updatedBy,
+        storeAddress,
+      });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const paginationAgent = createServerAction(
+  async ({ take, skip }: { take: number; skip: number }) => {
+    try {
+      const data = await paginationListAgent({ take, skip });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const searchAgens = createServerAction(
+  async ({ searchText }: { searchText: string }) => {
+    try {
+      const data = await searchAgent({ findSearch: searchText });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const downloadAgents = createServerAction(async () => {
+  try {
+    const data = await downloadAgent();
+
+    return data;
+  } catch (error: any) {
+    throw new ServerActionError(error.message);
+  }
+});
+
+export {
+  addAgents,
+  paginationAgent,
+  searchAgens,
+  updateAgents,
+  downloadAgents,
 };
 //endregion

@@ -168,7 +168,7 @@ model Campaign {
 model Agent {
   agentId       String     @id @default(cuid())
   storeAddress  String     @db.VarChar(1000)
-  customerName  String     @unique(map: "customerName") @db.VarChar(255)
+  customerName  String     @unique() @db.VarChar(255)
   email         String     @db.VarChar(255)
   noNpwp        String?    @db.VarChar(50)
   phone         String     @db.VarChar(255)

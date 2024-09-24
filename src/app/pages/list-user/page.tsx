@@ -326,9 +326,9 @@ export default function Home() {
                     htmlType="button"
                     block
                     onClick={() => {
-                      fetchUser({ take: 100, skip: 0 });
                       setTotalPage(0);
                       setCurrentPage(0);
+                      fetchUser({ take: 100, skip: 0 });
                     }}
                   >
                     Reset

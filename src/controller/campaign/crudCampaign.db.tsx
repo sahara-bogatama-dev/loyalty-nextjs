@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import _ from "lodash";
-import moment from "moment";
 
 const prisma = new PrismaClient();
 
