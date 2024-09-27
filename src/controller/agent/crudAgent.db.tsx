@@ -115,3 +115,19 @@ export async function downloadAgent() {
     throw new Error(`Error ${error.message}`);
   }
 }
+
+export async function deleteAgent({ agentId }: { agentId: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const deletedAgent = await tx.agent.delete({
+        where: {
+          agentId,
+        },
+      });
+
+      return deletedAgent;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}

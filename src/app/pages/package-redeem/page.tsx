@@ -14,7 +14,6 @@ import {
   Row,
   Col,
   InputNumber,
-  Select,
   Upload,
   DatePicker,
   Modal,
@@ -22,14 +21,12 @@ import {
 import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
 import {
-  addCampaigns,
-  currentProducts,
-  deleteCampaigns,
-  disableCampaigns,
-  listProducts,
-  paginationCampaign,
-  searchCampaigns,
-  updateCampaigns,
+  addPackages,
+  deletePackages,
+  disablePackages,
+  paginationPackage,
+  searchPackages,
+  updatePackage,
 } from "@/controller/action";
 import HeaderBar from "@/app/component/header.comp";
 import {
@@ -68,53 +65,37 @@ export default function Home() {
   } = theme.useToken();
   const { data: session } = useSession();
   const [messageApi, contextHolder] = message.useMessage();
-  const [campaignList, setCampaignList] = React.useState<any[]>([]);
-  const [productList, setProductList] = React.useState<any[]>([]);
-  const [productCombList, setProductCombList] = React.useState<any[]>([]);
-  const [productOldList, setProductOldList] = React.useState<any[]>([]);
+  const [packageList, setPackageList] = React.useState<any[]>([]);
+
   const [totalPage, setTotalPage] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isModalEditOpen, setIsModalEditOpen] = React.useState(false);
 
-  const fetchCampaign = React.useCallback(
+  const fetchListPackage = React.useCallback(
     async ({ take, skip }: { skip: number; take: number }) => {
-      const campaign = await paginationCampaign({ take, skip });
-      if (campaign.success) {
-        setCampaignList(campaign.value.result as any);
-        setTotalPage(Math.ceil(campaign.value.count / 100));
+      const packageRedeem = await paginationPackage({ take, skip });
+      if (packageRedeem.success) {
+        setPackageList(packageRedeem.value.result as any);
+        setTotalPage(Math.ceil(packageRedeem.value.count / 100));
       } else {
         messageApi.open({
           type: "error",
-          content: campaign.error,
+          content: packageRedeem.error,
         });
       }
     },
     [messageApi]
   );
 
-  const fetchProduct = React.useCallback(async () => {
-    const units = await listProducts();
-
-    if (units.success) {
-      setProductList(units.value);
-    } else {
-      messageApi.open({
-        type: "error",
-        content: units.error,
-      });
-    }
-  }, [messageApi]);
-
   React.useEffect(() => {
-    fetchCampaign({
+    fetchListPackage({
       skip: 0,
       take: 100,
     });
-    fetchProduct();
 
     const { protocol, hostname, port } = window.location;
     setBaseUrl(`${protocol}//${hostname}${port ? `:${port}` : ""}`);
-  }, [fetchCampaign, fetchProduct]);
+  }, [fetchListPackage]);
 
   const validateFile = async (file: RcFile) => {
     const maxSize = 500 * 1024;
@@ -195,7 +176,7 @@ export default function Home() {
           <Breadcrumb
             items={[
               { title: "Main", href: "/" },
-              { title: "Campaign", href: "/pages/campaign" },
+              { title: "Package Redeem", href: "/pages/package-redeem" },
             ]}
             style={{ margin: "16px 0" }}
           />
@@ -210,7 +191,7 @@ export default function Home() {
             <div className="flex justify-center">
               <Card size="small" title="Buat Campaign" bordered={true}>
                 <Form
-                  name="addCampaign"
+                  name="addPackage"
                   className="gap-10"
                   form={addForm}
                   onFinish={async (value) => {
@@ -221,13 +202,11 @@ export default function Home() {
 
                       setLoading(true);
 
-                      const createdCampaign = await addCampaigns({
-                        campaignName: value.campaignName,
-                        startDate: dayjs(value.dateRange[0]).toISOString(),
-                        endDate: dayjs(value.dateRange[1]).toISOString(),
-                        productId: value.selectProduct,
+                      const createdPackage = await addPackages({
+                        packageName: value.packageName,
+                        costPoint: value.point,
+                        limit: value.limit,
                         description: value.desc,
-                        loyaltyPoint: value.point,
                         createdBy: session?.user?.name ?? "",
                         image: base64.replace(
                           /^data:image\/[a-z]+;base64,/,
@@ -235,22 +214,21 @@ export default function Home() {
                         ),
                       });
 
-                      if (createdCampaign.success) {
+                      if (createdPackage.success) {
                         messageApi.open({
                           type: "success",
-                          content: "Campaign sudah ditambahkan.",
+                          content: "Package redeem sudah ditambahkan.",
                         });
 
-                        fetchProduct();
                         addForm.resetFields();
-                        fetchCampaign({
+                        fetchListPackage({
                           skip: 0,
                           take: 100,
                         });
                       } else {
                         messageApi.open({
                           type: "error",
-                          content: createdCampaign.error,
+                          content: createdPackage.error,
                         });
                       }
                       setLoading(false);
@@ -268,8 +246,8 @@ export default function Home() {
                   <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
                     <Col className="gutter-row" xs={24} md={12} xl={8}>
                       <Form.Item
-                        label="Campaign Name"
-                        name="campaignName"
+                        label="Package Name"
+                        name="packageName"
                         rules={[
                           {
                             required: true,
@@ -282,42 +260,6 @@ export default function Home() {
                         ]}
                       >
                         <Input />
-                      </Form.Item>
-                    </Col>
-                    <Col className="gutter-row" xs={24} md={12} xl={8}>
-                      <Form.Item
-                        label="Range Date"
-                        name="dateRange"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Please input your start date!",
-                          },
-                        ]}
-                      >
-                        <RangePicker format={"DD/MM/YYYY"} className="w-full" />
-                      </Form.Item>
-                    </Col>
-
-                    <Col className="gutter-row" xs={24} md={12} xl={8}>
-                      <Form.Item
-                        label="Select Product"
-                        name="selectProduct"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Please input your product!",
-                          },
-                        ]}
-                      >
-                        <Select
-                          mode="multiple"
-                          allowClear
-                          options={_.map(productList, (o) => ({
-                            value: o.value,
-                            label: <span>{o.label}</span>,
-                          }))}
-                        />
                       </Form.Item>
                     </Col>
 
@@ -348,6 +290,21 @@ export default function Home() {
                         ]}
                       >
                         <Input />
+                      </Form.Item>
+                    </Col>
+
+                    <Col className="gutter-row" xs={24} md={12} xl={8}>
+                      <Form.Item
+                        label="Limit"
+                        name="limit"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please input your limit!",
+                          },
+                        ]}
+                      >
+                        <InputNumber addonAfter="Limit" className="w-full" />
                       </Form.Item>
                     </Col>
 
@@ -394,7 +351,7 @@ export default function Home() {
                         htmlType="submit"
                         block
                       >
-                        Add Campaign
+                        Add Package
                       </Button>
                     </ConfigProvider>
                   </Form.Item>
@@ -407,12 +364,12 @@ export default function Home() {
               layout="inline"
               onFinish={async (value) => {
                 setLoading(true);
-                const search = await searchCampaigns({
+                const search = await searchPackages({
                   searchText: value.search,
                 });
 
                 if (search.success) {
-                  setCampaignList(search.value);
+                  setPackageList(search.value);
                   setTotalPage(0);
                   setCurrentPage(0);
                 } else {
@@ -436,7 +393,7 @@ export default function Home() {
                   },
                 ]}
               >
-                <Input placeholder="Campaign name" />
+                <Input placeholder="Package name" />
               </Form.Item>
 
               <Form.Item>
@@ -462,7 +419,7 @@ export default function Home() {
                     onClick={() => {
                       setTotalPage(0);
                       setCurrentPage(0);
-                      fetchCampaign({ take: 100, skip: 0 });
+                      fetchListPackage({ take: 100, skip: 0 });
                     }}
                   >
                     Reset
@@ -482,16 +439,8 @@ export default function Home() {
                 pagination={true}
                 getRowHeight={() => "auto"}
                 rowSelection={false}
-                rows={campaignList}
-                getRowId={(row) => row.campaignId}
-                columnGroupingModel={[
-                  {
-                    groupId: "durationCampaign",
-                    headerName: "Campaign Duration",
-                    headerAlign: "center",
-                    children: [{ field: "startDate" }, { field: "endDate" }],
-                  },
-                ]}
+                rows={packageList}
+                getRowId={(row) => row.packageId}
                 columns={[
                   {
                     field: "actions",
@@ -503,42 +452,14 @@ export default function Home() {
                           setLoadingModal(true);
                           setIsModalEditOpen(true);
 
-                          fetchProduct().finally(async () => {
-                            const productCampaign = await currentProducts({
-                              campaignId: params.id.toString(),
-                            });
-
-                            if (productCampaign.success) {
-                              setProductOldList(productCampaign.value);
-
-                              editForm.setFieldsValue({
-                                selectProduct: productCampaign.value,
-                              });
-
-                              setProductOldList(productCampaign.value);
-
-                              setProductCombList(
-                                _.concat(productList, productCampaign.value)
-                              );
-                            } else {
-                              messageApi.open({
-                                type: "error",
-                                content: productCampaign.error,
-                              });
-                            }
-
-                            setLoadingModal(false);
-                          });
                           editForm.setFieldsValue({
-                            campaignName: params.row.campaignName,
-                            point: params.row.loyaltyPoint,
-                            dateRange: [
-                              dayjs(params.row.startDate),
-                              dayjs(params.row.endDate),
-                            ],
-                            desc: params.row.description,
-                            campaignId: params.id.toString(),
+                            packageName: params.row.packageName,
+                            point: params.row.costPoint,
+                            limit: params.row.limit,
+                            desc: params.row.packageDesc,
+                            packageId: params.id.toString(),
                           });
+                          setLoadingModal(false);
                         }}
                         label="Edit"
                         icon={<FaEdit />}
@@ -548,21 +469,21 @@ export default function Home() {
                         key={params.id.toString()}
                         icon={<MdDisabledByDefault />}
                         onClick={async () => {
-                          const disableCampaign = await disableCampaigns({
+                          const disables = await disablePackages({
                             updatedBy: session?.user?.name ?? undefined,
-                            idEdit: params.id.toString(),
+                            packageId: params.id.toString(),
                             disable: !params.row.inActive,
                           });
 
-                          if (disableCampaign.success) {
-                            fetchCampaign({
+                          if (disables.success) {
+                            fetchListPackage({
                               skip: Math.max(0, (currentPage - 1) * 100),
                               take: 100,
                             });
                           } else {
                             messageApi.open({
                               type: "error",
-                              content: disableCampaign.error,
+                              content: disables.error,
                             });
                           }
                         }}
@@ -573,19 +494,19 @@ export default function Home() {
                         key={params.id.toString()}
                         icon={<FaTrash />}
                         onClick={async () => {
-                          const deleteCampaign = await deleteCampaigns({
-                            idEdit: params.id.toString(),
+                          const deletes = await deletePackages({
+                            packageId: params.id.toString(),
                           });
 
-                          if (deleteCampaign.success) {
-                            fetchCampaign({
+                          if (deletes.success) {
+                            fetchListPackage({
                               skip: Math.max(0, (currentPage - 1) * 100),
                               take: 100,
                             });
                           } else {
                             messageApi.open({
                               type: "error",
-                              content: deleteCampaign.error,
+                              content: deletes.error,
                             });
                           }
                         }}
@@ -601,42 +522,29 @@ export default function Home() {
                     width: 120,
                   },
                   {
-                    field: "campaignName",
-                    headerName: "Nama Campaign",
+                    field: "packageName",
+                    headerName: "Nama Package",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
                   },
                   {
-                    field: "startDate",
-                    headerName: "Start Date",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
-                    type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY"),
-                  },
-                  {
-                    field: "endDate",
-                    headerName: "End Date",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
-                    type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY"),
-                  },
-                  {
-                    field: "loyaltyPoint",
-                    headerName: "Point",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "description",
+                    field: "packageDesc",
                     headerName: "Description",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "costPoint",
+                    headerName: "Cost Point",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "limit",
+                    headerName: "Max Redeem",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
@@ -652,7 +560,7 @@ export default function Home() {
                       return (
                         <PhotoProvider>
                           <PhotoView
-                            src={`${baseUrl}/api/campaign/image/${params.id.toString()}`}
+                            src={`${baseUrl}/api/package-redeem/image/${params.id.toString()}`}
                           >
                             <Button onClick={() => {}} type="link">
                               Tampilkan Gambar
@@ -709,7 +617,7 @@ export default function Home() {
                   value: number
                 ) => {
                   setCurrentPage(value);
-                  fetchCampaign({
+                  fetchListPackage({
                     skip: Math.max(0, (value - 1) * 100),
                     take: 100,
                   });
@@ -722,7 +630,7 @@ export default function Home() {
       </Layout>
 
       <Modal
-        title="Edit Campaign"
+        title="Edit Package"
         open={isModalEditOpen}
         onCancel={() => {
           setIsModalEditOpen(false);
@@ -733,54 +641,46 @@ export default function Home() {
         loading={loadingModal}
       >
         <Form
-          name="editdCampaign"
+          name="editPackage"
           className="gap-10"
           form={editForm}
           onFinish={async (value) => {
             try {
-              setLoading(true);
               const base64 = value.addImg
                 ? value.addImg?.file?.status === "removed"
                   ? undefined
                   : ((await getBase64(value.addImg.file)) as string)
                 : undefined;
 
-              const updateCampaign = await updateCampaigns({
-                campaignId: value.campaignId,
-                campaignName: value.campaignName,
-                startDate: dayjs(value.dateRange[0]).toISOString(),
-                endDate: dayjs(value.dateRange[1]).toISOString(),
-                productId: value.selectProduct,
-                oldProductId: _.difference(
-                  _.map(productOldList, (o) => {
-                    return o.value;
-                  }),
-                  value.selectProduct
-                ),
+              setLoading(true);
+
+              const updatePackages = await updatePackage({
+                packageId: value.packageId,
+                packageName: value.packageName,
+                costPoint: value.point,
+                limit: value.limit,
                 description: value.desc,
-                loyaltyPoint: value.point,
-                updatedBy: session?.user?.name ?? "",
+                createdBy: session?.user?.name ?? "",
                 image: base64?.replace(/^data:image\/[a-z]+;base64,/, ""),
               });
 
-              if (updateCampaign.success) {
-                fetchCampaign({
-                  skip: Math.max(0, (currentPage - 1) * 100),
-                  take: 100,
-                });
-                fetchProduct();
-
+              if (updatePackages.success) {
                 messageApi.open({
                   type: "success",
-                  content: "Berhasil di update.",
+                  content: "Package redeem sudah diperbarui.",
+                });
+
+                editForm.resetFields();
+                fetchListPackage({
+                  skip: 0,
+                  take: 100,
                 });
               } else {
                 messageApi.open({
                   type: "error",
-                  content: updateCampaign.error,
+                  content: updatePackages.error,
                 });
               }
-
               setLoading(false);
               setIsModalEditOpen(false);
             } catch (e: any) {
@@ -795,13 +695,13 @@ export default function Home() {
           wrapperCol={{ span: 24 }}
         >
           <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-            <Form.Item name="campaignId" hidden>
+            <Form.Item name="packageId" hidden>
               <Input />
             </Form.Item>
             <Col className="gutter-row" xs={24} md={12} xl={8}>
               <Form.Item
-                label="Campaign Name"
-                name="campaignName"
+                label="Package Name"
+                name="packageName"
                 rules={[
                   {
                     required: true,
@@ -814,42 +714,6 @@ export default function Home() {
                 ]}
               >
                 <Input />
-              </Form.Item>
-            </Col>
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Range Date"
-                name="dateRange"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your start date!",
-                  },
-                ]}
-              >
-                <RangePicker format={"DD/MM/YYYY"} className="w-full" />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Select Product"
-                name="selectProduct"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your product!",
-                  },
-                ]}
-              >
-                <Select
-                  mode="multiple"
-                  allowClear
-                  options={_.map(productCombList, (o) => ({
-                    value: o.value,
-                    label: <span>{o.label}</span>,
-                  }))}
-                />
               </Form.Item>
             </Col>
 
@@ -880,6 +744,21 @@ export default function Home() {
                 ]}
               >
                 <Input />
+              </Form.Item>
+            </Col>
+
+            <Col className="gutter-row" xs={24} md={12} xl={8}>
+              <Form.Item
+                label="Limit"
+                name="limit"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please input your limit!",
+                  },
+                ]}
+              >
+                <InputNumber addonAfter="Limit" className="w-full" />
               </Form.Item>
             </Col>
 
@@ -921,7 +800,7 @@ export default function Home() {
           <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
             <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
               <Button loading={loading} type="primary" htmlType="submit" block>
-                Update Campaign
+                Edit Package
               </Button>
             </ConfigProvider>
           </Form.Item>

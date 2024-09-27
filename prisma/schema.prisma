@@ -181,3 +181,60 @@ model Agent {
 
   @@index([agentId])
 }
+
+model PackageRedeem {
+  packageId     String   @id @default(cuid()) 
+  packageName   String?  @db.VarChar(255)
+  packageDesc   String?  @db.VarChar(100)
+  costPoint       Int
+  limit         Int @default(0)
+  photo         Bytes?
+  inActive      Boolean? @default(false)
+  createdBy     String            @default("bySystem") @db.VarChar(255)
+  updatedBy     String            @default("bySystem") @db.VarChar(255)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([packageId])
+}
+
+model BoothOwner {
+  boothId           String   @id @default(uuid()) @db.VarChar(255)
+  userId            String   @db.VarChar(255)
+  fullname          String?  @db.VarChar(255)
+  address           String?  @db.VarChar(1000)
+  phone             String?  @db.VarChar(255)
+  email             String?  @db.VarChar(255)
+  dateEstablishment String?  @db.VarChar(255)
+  instagram         String?  @db.VarChar(255)
+  facebook          String?  @db.VarChar(255)
+  ecommerce         String?  @db.VarChar(255)
+  geolocation       String?    @db.VarChar(255)
+  createdBy     String            @default("bySystem") @db.VarChar(255)
+  updatedBy     String            @default("bySystem") @db.VarChar(255)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  boothMember       Booth[]
+
+  @@index([boothId])
+}
+
+model Booth {
+  boothMemberId     String     @id @default(cuid()) @db.VarChar(255)
+  address           String     @db.VarChar(1000)
+  geolocation       String?    @db.VarChar(255)
+  photoBooth        Bytes?
+  email             String?    @db.VarChar(255)
+  fullname          String?    @db.VarChar(255)
+  phone             String?    @db.VarChar(255)
+  userId            String     @db.VarChar(255)
+  boothId           String     
+  createdBy         String            @default("bySystem") @db.VarChar(255)
+  updatedBy         String            @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  boothOwner        BoothOwner @relation(fields: [boothId], references: [boothId], onDelete: Cascade)
+
+  @@index([boothId])
+  @@index([boothMemberId])
+}

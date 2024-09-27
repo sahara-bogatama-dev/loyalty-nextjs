@@ -138,7 +138,7 @@ export async function campaignImage({ campaignId }: { campaignId: string }) {
 export async function searchCampaign({ findSearch }: { findSearch?: string }) {
   try {
     return prisma.$transaction(async (tx) => {
-      const searchUser = await tx.campaign.findMany({
+      const search = await tx.campaign.findMany({
         where: {
           OR: [{ campaignName: { contains: findSearch } }],
         },
@@ -158,7 +158,7 @@ export async function searchCampaign({ findSearch }: { findSearch?: string }) {
         },
       });
 
-      return searchUser;
+      return search;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
@@ -191,11 +191,11 @@ export async function disableCampaign({
 export async function deleteCampaign({ idEdit }: { idEdit?: string }) {
   try {
     return prisma.$transaction(async (tx) => {
-      const updateCampaign = await tx.campaign.delete({
+      const deletes = await tx.campaign.delete({
         where: { campaignId: idEdit },
       });
 
-      return updateCampaign;
+      return deletes;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

@@ -26,6 +26,7 @@ import {
   addAgents,
   addCampaigns,
   currentProducts,
+  deleteAgents,
   deleteCampaigns,
   disableCampaigns,
   downloadAgents,
@@ -451,7 +452,24 @@ export default function Home() {
                       <GridActionsCellItem
                         key={params.id.toString()}
                         icon={<FaTrash />}
-                        onClick={async () => {}}
+                        onClick={async () => {
+                          const deleteAgent = await deleteAgents({
+                            idAgent: params.id.toString(),
+                          });
+
+                          if (deleteAgent.success) {
+                            fetchAgent({
+                              skip: Math.max(0, (currentPage - 1) * 100),
+                              take: 100,
+                            });
+                          } else {
+                            messageApi.open({
+                              type: "error",
+                              content: deleteAgent.error,
+                            });
+                          }
+                          setLoading(false);
+                        }}
                         label="Delete"
                         showInMenu
                       />,
