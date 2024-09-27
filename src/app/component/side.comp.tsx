@@ -37,8 +37,10 @@ interface MenuItem {
 
 const filterMenuByRole = (menu: MenuItem[], roles: string[]): MenuItem[] => {
   return _.filter(menu, (item) => {
-    // Check if the item has a matching role
-    const hasRole = _.some(item.role, (role) => _.includes(roles, role));
+    // Check if the item has a matching role or no role (role is undefined)
+    const hasRole =
+      _.some(item.role, (role) => _.includes(roles, role)) ||
+      item.role === undefined;
 
     // If the item has children, filter them recursively
     let children = item.children
@@ -73,7 +75,7 @@ export default function SideBar({
         key: "/pages/dashboard",
         label: "Dashboard",
         icon: <AiFillDashboard />,
-        role: ["cm0r2rm2w00000cl8as2u68th"],
+        role: undefined,
         onClick: () => {
           route.push("/pages/dashboard");
         },
@@ -93,7 +95,7 @@ export default function SideBar({
             },
           },
           {
-            key: "MD-2",
+            key: "/pages/agent",
             label: "Agent",
             icon: <FaHouseUser />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
@@ -129,7 +131,7 @@ export default function SideBar({
             },
           },
           {
-            key: "MD-6",
+            key: "/pages/package-redeem",
             label: "Package Redeem",
             icon: <MdOutlineRedeem />,
             role: ["cm0r2rm2w00000cl8as2u68th"],

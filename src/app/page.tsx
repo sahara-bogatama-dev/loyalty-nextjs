@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import type { FormProps } from "antd";
 import moment from "moment/moment.js";
@@ -16,8 +17,10 @@ type FieldType = {
 export default function Home() {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
+  const [loading, setLoading] = React.useState(false);
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
+    setLoading(true);
     const resAuth = await login({
       email: values.username as string,
       password: values.password as string,
@@ -31,6 +34,7 @@ export default function Home() {
         content: resAuth.error.replace(/Error: /g, ""),
       });
     }
+    setLoading(false);
   };
 
   return (
@@ -52,7 +56,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-sm">
           <Form
             name="basic"
             labelCol={{ span: 24 }}
@@ -83,7 +87,12 @@ export default function Home() {
 
             <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
               <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                <Button type="primary" htmlType="submit" block>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={loading}
+                >
                   LOGIN
                 </Button>
               </ConfigProvider>

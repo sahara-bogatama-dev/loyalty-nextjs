@@ -26,3 +26,18 @@ export async function paginationListProduct({
     throw new Error(`Error ${error.message}`);
   }
 }
+
+export async function listProducts() {
+  try {
+    const [result, count] = await prisma.$transaction([
+      prisma.product.findMany({
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.product.count(),
+    ]);
+
+    return { result, count };
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}

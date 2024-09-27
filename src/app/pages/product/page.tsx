@@ -22,6 +22,7 @@ import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
 import {
   addProducts,
+  allProductData,
   downloadProducts,
   listUnits,
   paginationProduct,
@@ -30,6 +31,7 @@ import {
 } from "@/controller/action";
 import HeaderBar from "@/app/component/header.comp";
 import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
+import { DataGridPremium, GridToolbar } from "@mui/x-data-grid-premium";
 import { Pagination } from "@mui/material";
 import _ from "lodash";
 import moment from "moment";
@@ -40,6 +42,7 @@ export default function Home() {
   const { Content } = Layout;
   const [collapsed, setCollapsed] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [loadingTable, setLoadingTable] = React.useState(false);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -68,6 +71,22 @@ export default function Home() {
     [messageApi]
   );
 
+  const fetchAllProduct = React.useCallback(async () => {
+    setLoadingTable(true);
+    const product = await allProductData();
+
+    if (product.success) {
+      setProductList(product.value.result as any);
+      setTotalPage(Math.ceil(product.value.count / 100));
+    } else {
+      messageApi.open({
+        type: "error",
+        content: product.error,
+      });
+    }
+    setLoadingTable(false);
+  }, [messageApi]);
+
   const fetchUnit = React.useCallback(async () => {
     const units = await listUnits();
 
@@ -83,11 +102,12 @@ export default function Home() {
 
   React.useEffect(() => {
     fetchUnit();
-    fetchProduct({
+    /* fetchProduct({
       skip: 0,
       take: 100,
-    });
-  }, [fetchProduct, fetchUnit]);
+    }); */
+    fetchAllProduct();
+  }, [fetchAllProduct, fetchProduct, fetchUnit]);
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
@@ -447,7 +467,106 @@ export default function Home() {
               </Form.Item>
             </Form>
             <div style={{ height: 500, width: "100%", marginTop: 10 }}>
+              <DataGridPremium
+                loading={loadingTable}
+                pageSizeOptions={[50, 100, 1000]}
+                rows={productList}
+                getRowId={(row) => row.productId}
+                disableRowSelectionOnClick
+                headerFilters
+                slots={{ toolbar: GridToolbar }}
+                slotProps={{
+                  toolbar: {
+                    showQuickFilter: true,
+                  },
+                }}
+                pagination
+                columns={[
+                  {
+                    field: "basePoint",
+                    headerName: "Base Point",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "productCode",
+                    headerName: "Product Code",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "productName",
+                    headerName: "Product Name",
+                    minWidth: 250,
+                    align: "left",
+                    editable: false,
+                  },
+                  {
+                    field: "weight",
+                    headerName: "Weight (Kg)",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "unit",
+                    headerName: "Unit",
+                    minWidth: 250,
+
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "expiredPeriod",
+                    headerName: "Expired Period",
+                    minWidth: 250,
+                    type: "dateTime",
+                    valueFormatter: (params: any) =>
+                      moment(params).format("DD/MM/YYYY"),
+                    headerAlign: "center",
+                    editable: false,
+                  },
+                  {
+                    field: "createdBy",
+                    headerName: "Created By",
+                    headerAlign: "center",
+                    minWidth: 250,
+                    editable: false,
+                  },
+                  {
+                    field: "createdAt",
+                    headerName: "Created At",
+                    headerAlign: "center",
+                    minWidth: 250,
+                    editable: false,
+                    type: "dateTime",
+                    valueFormatter: (params: any) =>
+                      moment(params).format("DD/MM/YYYY hh:mm"),
+                  },
+                  {
+                    field: "updatedBy",
+                    headerName: "Updated By",
+                    headerAlign: "center",
+                    minWidth: 250,
+                    editable: false,
+                  },
+                  {
+                    field: "updatedAt",
+                    headerName: "updated At",
+                    headerAlign: "center",
+                    minWidth: 250,
+                    editable: false,
+                    type: "dateTime",
+                    valueFormatter: (params: any) =>
+                      moment(params).format("DD/MM/YYYY hh:mm"),
+                  },
+                ]}
+              />
               <DataGrid
+                loading={loadingTable}
+                pageSizeOptions={[50, 100, 1000]}
                 slots={{
                   toolbar: () => (
                     <div className="flex items-center m-2 gap-2">

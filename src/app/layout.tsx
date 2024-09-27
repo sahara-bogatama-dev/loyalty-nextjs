@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/lib/auth";
 import { SessionProvider } from "next-auth/react";
+import MuiXLicense from "./muiXLicense";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,7 +23,10 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <SessionProvider session={session} key={sessionKey}>
-        <body className={inter.className}>{children}</body>
+        <body className={inter.className}>
+          {children}
+          <MuiXLicense />
+        </body>
       </SessionProvider>
     </html>
   );
