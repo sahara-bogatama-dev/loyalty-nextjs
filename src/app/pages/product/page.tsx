@@ -23,16 +23,20 @@ import { useSession } from "next-auth/react";
 import {
   addProducts,
   allProductData,
-  downloadProducts,
   listUnits,
-  paginationProduct,
-  searchProducts,
   uploadProduct,
-} from "@/controller/action";
+} from "@/controller/product/action";
 import HeaderBar from "@/app/component/header.comp";
-import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
-import { DataGridPremium, GridToolbar } from "@mui/x-data-grid-premium";
-import { Pagination } from "@mui/material";
+import {
+  DataGridPremium,
+  GridToolbarContainer,
+  GridToolbarColumnsButton,
+  GridToolbarFilterButton,
+  GridToolbarDensitySelector,
+  GridToolbarExport,
+  GridToolbarQuickFilter,
+} from "@mui/x-data-grid-premium";
+import { Box, Pagination } from "@mui/material";
 import _ from "lodash";
 import moment from "moment";
 import * as XLSX from "xlsx";
@@ -54,29 +58,12 @@ export default function Home() {
   const [totalPage, setTotalPage] = React.useState<number>(0);
   const [currentPage, setCurrentPage] = React.useState<number>(1);
 
-  const fetchProduct = React.useCallback(
-    async ({ take, skip }: { skip: number; take: number }) => {
-      const product = await paginationProduct({ take, skip });
-
-      if (product.success) {
-        setProductList(product.value.result as any);
-        setTotalPage(Math.ceil(product.value.count / 100));
-      } else {
-        messageApi.open({
-          type: "error",
-          content: product.error,
-        });
-      }
-    },
-    [messageApi]
-  );
-
   const fetchAllProduct = React.useCallback(async () => {
     setLoadingTable(true);
     const product = await allProductData();
 
     if (product.success) {
-      setProductList(product.value.result as any);
+      setProductList(product.value.serializedProducts as any);
       setTotalPage(Math.ceil(product.value.count / 100));
     } else {
       messageApi.open({
@@ -102,12 +89,9 @@ export default function Home() {
 
   React.useEffect(() => {
     fetchUnit();
-    /* fetchProduct({
-      skip: 0,
-      take: 100,
-    }); */
+
     fetchAllProduct();
-  }, [fetchAllProduct, fetchProduct, fetchUnit]);
+  }, [fetchAllProduct, fetchUnit]);
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
@@ -128,27 +112,6 @@ export default function Home() {
         Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
       }.xlsx`
     );
-  };
-
-  const exportProduct = async () => {
-    const allProduct = await downloadProducts();
-
-    if (allProduct.success) {
-      const ws = XLSX.utils.json_to_sheet(allProduct.value);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-      XLSX.writeFile(
-        wb,
-        `Sahara Product ${moment().format("DD-MM-YYYY")}-${
-          Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
-        }.xlsx`
-      );
-    } else {
-      messageApi.open({
-        type: "error",
-        content: allProduct.error,
-      });
-    }
   };
 
   const handleFileChange: UploadProps["onChange"] = (info) => {
@@ -174,10 +137,7 @@ export default function Home() {
           });
 
           if (uploadProd.success) {
-            fetchProduct({
-              skip: Math.max(0, (currentPage - 1) * 100),
-              take: 100,
-            });
+            fetchAllProduct();
           } else {
             messageApi.open({
               type: "error",
@@ -254,10 +214,7 @@ export default function Home() {
                       });
 
                       if (addProd.success) {
-                        fetchProduct({
-                          skip: Math.max(0, (currentPage - 1) * 100),
-                          take: 100,
-                        });
+                        fetchAllProduct();
                         messageApi.open({
                           type: "success",
                           content: "Product sudah di tambahkan.",
@@ -395,183 +352,35 @@ export default function Home() {
               </Card>
             </div>
 
-            <Form
-              name="searchForm"
-              layout="inline"
-              onFinish={async (value) => {
-                setLoading(true);
-                const searchProduct = await searchProducts({
-                  searchText: value.search,
-                });
-
-                if (searchProduct.success) {
-                  setProductList(value);
-                  setTotalPage(0);
-                  setCurrentPage(0);
-                } else {
-                  messageApi.open({
-                    type: "error",
-                    content: searchProduct.error,
-                  });
-                }
-                setLoading(false);
-              }}
-              autoComplete="off"
-              className="my-2"
-            >
-              <Form.Item
-                label="Search"
-                name="search"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your search!",
-                  },
-                ]}
-              >
-                <Input placeholder="fullname atau email" />
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="submit"
-                    block
-                  >
-                    Search
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="button"
-                    block
-                    onClick={() => {
-                      setTotalPage(0);
-                      setCurrentPage(0);
-                      fetchProduct({
-                        skip: 0,
-                        take: 100,
-                      });
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-            </Form>
             <div style={{ height: 500, width: "100%", marginTop: 10 }}>
               <DataGridPremium
                 loading={loadingTable}
-                pageSizeOptions={[50, 100, 1000]}
+                pageSizeOptions={[10, 100, 1000]}
                 rows={productList}
                 getRowId={(row) => row.productId}
                 disableRowSelectionOnClick
                 headerFilters
-                slots={{ toolbar: GridToolbar }}
-                slotProps={{
-                  toolbar: {
-                    showQuickFilter: true,
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 1000, page: 0 },
                   },
                 }}
-                pagination
-                columns={[
-                  {
-                    field: "basePoint",
-                    headerName: "Base Point",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "productCode",
-                    headerName: "Product Code",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "productName",
-                    headerName: "Product Name",
-                    minWidth: 250,
-                    align: "left",
-                    editable: false,
-                  },
-                  {
-                    field: "weight",
-                    headerName: "Weight (Kg)",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "unit",
-                    headerName: "Unit",
-                    minWidth: 250,
-
-                    headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "expiredPeriod",
-                    headerName: "Expired Period",
-                    minWidth: 250,
-                    type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params).format("DD/MM/YYYY"),
-                    headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "createdBy",
-                    headerName: "Created By",
-                    headerAlign: "center",
-                    minWidth: 250,
-                    editable: false,
-                  },
-                  {
-                    field: "createdAt",
-                    headerName: "Created At",
-                    headerAlign: "center",
-                    minWidth: 250,
-                    editable: false,
-                    type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params).format("DD/MM/YYYY hh:mm"),
-                  },
-                  {
-                    field: "updatedBy",
-                    headerName: "Updated By",
-                    headerAlign: "center",
-                    minWidth: 250,
-                    editable: false,
-                  },
-                  {
-                    field: "updatedAt",
-                    headerName: "updated At",
-                    headerAlign: "center",
-                    minWidth: 250,
-                    editable: false,
-                    type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params).format("DD/MM/YYYY hh:mm"),
-                  },
-                ]}
-              />
-              <DataGrid
-                loading={loadingTable}
-                pageSizeOptions={[50, 100, 1000]}
                 slots={{
                   toolbar: () => (
-                    <div className="flex items-center m-2 gap-2">
-                      <GridToolbarQuickFilter placeholder="Filter by data table" />
-
+                    <GridToolbarContainer>
+                      <GridToolbarQuickFilter />
+                      <GridToolbarColumnsButton />
+                      <GridToolbarFilterButton />
+                      <GridToolbarDensitySelector
+                        slotProps={{ tooltip: { title: "Change density" } }}
+                      />
+                      <Box sx={{ flexGrow: 1 }} />
+                      <GridToolbarExport
+                        slotProps={{
+                          tooltip: { title: "Export data" },
+                          button: { variant: "outlined" },
+                        }}
+                      />
                       <Upload
                         accept=".xlsx"
                         showUploadList={false}
@@ -579,38 +388,23 @@ export default function Home() {
                         maxCount={1}
                         multiple={false}
                       >
-                        <Button
-                          icon={<UploadOutlined />}
-                          loading={loading}
-                          type="link"
-                        >
+                        <Button icon={<UploadOutlined />} loading={loading}>
                           Upload
                         </Button>
                       </Upload>
                       <Button
-                        type="link"
                         onClick={() => {
                           downloadTemplate();
                         }}
+                        loading={loading}
                       >
                         Template
                       </Button>
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          exportProduct();
-                        }}
-                      >
-                        Export
-                      </Button>
-                    </div>
+                    </GridToolbarContainer>
                   ),
                 }}
-                pagination={true}
-                getRowHeight={() => "auto"}
-                rowSelection={false}
-                rows={productList}
-                getRowId={(row) => row.productId}
+                pagination
+                disableColumnResize={false}
                 columns={[
                   {
                     field: "basePoint",
@@ -631,6 +425,7 @@ export default function Home() {
                     headerName: "Product Name",
                     minWidth: 250,
                     align: "left",
+                    headerAlign: "center",
                     editable: false,
                   },
                   {
@@ -693,24 +488,6 @@ export default function Home() {
                       moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                 ]}
-              />
-            </div>
-
-            <div className="flex justify-center py-4">
-              <Pagination
-                count={totalPage}
-                page={currentPage}
-                onChange={async (
-                  event: React.ChangeEvent<unknown>,
-                  value: number
-                ) => {
-                  setCurrentPage(value);
-                  fetchProduct({
-                    skip: Math.max(0, (value - 1) * 100),
-                    take: 100,
-                  });
-                }}
-                shape="rounded"
               />
             </div>
           </div>

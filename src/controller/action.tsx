@@ -11,17 +11,7 @@ import { createUser } from "./register/register.db";
 import { paginationListUser } from "./listUser/listUser.db";
 import { addRole, deleteRole, listRole } from "./listUser/listRole.db";
 import { disableUser, searchUser, updateUser } from "./listUser/crudUser.db";
-import {
-  addProduct,
-  batchUploadProduct,
-  downloadProduct,
-  listUnit,
-  searchProduct,
-} from "./product/crudProduct.db";
-import {
-  paginationListProduct,
-  listProducts as allProducts,
-} from "./product/listProduct.db";
+
 import {
   addCampaign,
   Campaigns,
@@ -286,118 +276,6 @@ export {
   updateUsers,
   searchUsers,
   disableUsers,
-};
-//endregion
-
-//region product
-const listUnits = createServerAction(async () => {
-  try {
-    const data = await listUnit();
-
-    return _.map(data, (o) => ({ value: o.name, label: o.name }));
-  } catch (error: any) {
-    throw new ServerActionError(error.message);
-  }
-});
-
-const addProducts = createServerAction(
-  async ({
-    productCode,
-    productName,
-    weight,
-    basePoint,
-    unit,
-    expiredPeriod,
-    createdBy,
-  }: {
-    productName: string;
-    productCode: string;
-    weight: number;
-    basePoint: number;
-    unit: string;
-    expiredPeriod: number;
-    createdBy: string;
-  }) => {
-    try {
-      const data = await addProduct({
-        productCode,
-        productName,
-        weight,
-        basePoint,
-        unit,
-        expiredPeriod,
-        createdBy,
-      });
-
-      return data;
-    } catch (error: any) {
-      throw new ServerActionError(error.message);
-    }
-  }
-);
-
-const paginationProduct = createServerAction(
-  async ({ take, skip }: { take: number; skip: number }) => {
-    try {
-      const data = await paginationListProduct({ take, skip });
-
-      return data;
-    } catch (error: any) {
-      throw new ServerActionError(error.message);
-    }
-  }
-);
-
-const allProductData = createServerAction(async () => {
-  try {
-    const data = await allProducts();
-
-    return data;
-  } catch (error: any) {
-    throw new ServerActionError(error.message);
-  }
-});
-
-const downloadProducts = createServerAction(async () => {
-  try {
-    const data = await downloadProduct();
-
-    return data;
-  } catch (error: any) {
-    throw new ServerActionError(error.message);
-  }
-});
-
-const uploadProduct = createServerAction(async ({ data }: { data: any }) => {
-  try {
-    const productUpload = await batchUploadProduct({ data });
-
-    return productUpload;
-  } catch (error: any) {
-    throw new ServerActionError(error.message);
-  }
-});
-
-const searchProducts = createServerAction(
-  async ({ searchText }: { searchText: string }) => {
-    try {
-      const data = await searchProduct({ findSearch: searchText });
-
-      return data;
-    } catch (error: any) {
-      throw new ServerActionError(error.message);
-    }
-  }
-);
-
-export {
-  allProductData,
-  listUnits,
-  addProducts,
-  paginationProduct,
-  downloadProducts,
-  uploadProduct,
-  searchProducts,
 };
 //endregion
 
