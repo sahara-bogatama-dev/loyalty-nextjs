@@ -22,14 +22,33 @@ export async function listRole() {
   }
 }
 
+export async function currentRole({ userId }: { userId: string }) {
+  try {
+    const [result] = await prisma.$transaction([
+      prisma.role.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          name: true,
+          userId: true,
+        },
+      }),
+    ]);
+
+    return { result };
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
 export async function addRole({
-  id,
+  createdBy,
   idRole,
-  idEdit,
+  id,
 }: {
-  id: string;
+  createdBy: string;
   idRole: string;
-  idEdit: string;
+  id: string;
 }) {
   try {
     return prisma.$transaction(async (tx) => {
@@ -39,15 +58,14 @@ export async function addRole({
 
       if (stringMap) {
         const existRole = await tx.role.findFirst({ where: { id: idRole } });
-        const createdBy = await tx.user.findUnique({ where: { id } });
 
         if (!existRole) {
           const addRole = await tx.role.create({
             data: {
               id: stringMap.id,
               name: stringMap.name,
-              userId: idEdit,
-              createdBy: createdBy?.name ?? "bySystem",
+              userId: id,
+              createdBy,
             },
           });
 

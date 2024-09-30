@@ -22,83 +22,161 @@ import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
 import {
   addRoles,
+  allUserData,
   createInternalUser,
+  currentRoleUser,
   deleteRoles,
-  disableUsers,
-  paginationUser,
   roleUser,
-  searchUsers,
   updateUsers,
-} from "@/controller/action";
+} from "@/controller/listUser/action";
 import HeaderBar from "@/app/component/header.comp";
 import moment from "moment";
-import {
-  DataGrid,
-  GridActionsCellItem,
-  GridRowParams,
-  GridToolbarQuickFilter,
-} from "@mui/x-data-grid";
-import { Pagination } from "@mui/material";
 import _ from "lodash";
-import { FaEdit } from "react-icons/fa";
-import { PiUserGearFill } from "react-icons/pi";
-import { MdDisabledByDefault } from "react-icons/md";
 import dayjs from "dayjs";
+import {
+  DataGridPremium,
+  GridToolbarContainer,
+  GridToolbarColumnsButton,
+  GridToolbarFilterButton,
+  GridToolbarDensitySelector,
+  GridRowModesModel,
+  GridRowModes,
+  GridRowId,
+  GridRowModel,
+  GridEventListener,
+  GridRowEditStopReasons,
+  GridActionsCellItem,
+  GridToolbarQuickFilter,
+} from "@mui/x-data-grid-premium";
+import { MdCancel } from "react-icons/md";
+import { FaSave, FaEdit } from "react-icons/fa";
+import { PiUserGearFill } from "react-icons/pi";
 
 export default function Home() {
   const { Content } = Layout;
   const [collapsed, setCollapsed] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [loadingTable, setLoadingTable] = React.useState(false);
+  const [loadingModal, setLoadingModal] = React.useState(false);
+  const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>(
+    {}
+  );
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const { data: session } = useSession();
   const [messageApi, contextHolder] = message.useMessage();
   const [userList, setUserList] = React.useState<any[]>([]);
-  const [totalPage, setTotalPage] = React.useState<number>(0);
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isModalRoleOpen, setIsModalRoleOpen] = React.useState(false);
-  const [isRole, setRole] = React.useState<{ id: string; name: string }[]>([]);
+  const [isRole, setRole] = React.useState<
+    { id: string; name: string; userId: string }[]
+  >([]);
   const [listRole, setListRole] = React.useState<
     { id: string; name: string }[]
   >([]);
 
-  const [isModalEditOpen, setIsModalEditOpen] = React.useState(false);
-  const [idEdit, setIdEdit] = React.useState("");
-
   const [addForm] = Form.useForm();
-  const [editForm] = Form.useForm();
   const [rolesForm] = Form.useForm();
 
-  const [isFormFilled, setIsFormFilled] = React.useState(false);
+  const fetchUser = React.useCallback(async () => {
+    const user = await allUserData();
 
-  const onValuesChange = (changedValues: any) => {
-    const values = editForm.getFieldsValue();
-    const anyFilled = Object.values(values).some((value) => value);
-
-    setIsFormFilled(anyFilled);
-  };
-
-  const fetchUser = React.useCallback(
-    async ({ take, skip }: { skip: number; take: number }) => {
-      const user = await paginationUser({ take, skip });
-
-      if (user.success) {
-        setUserList(user.value.result as any);
-        setTotalPage(Math.ceil(user.value.count / 100));
-      } else {
-        messageApi.open({
-          type: "error",
-          content: user.error,
-        });
-      }
-    },
-    [messageApi]
-  );
+    if (user.success) {
+      console.log(user.value.result);
+      setUserList(user.value.result as any);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: user.error,
+      });
+    }
+  }, [messageApi]);
 
   React.useEffect(() => {
-    fetchUser({ take: 100, skip: 0 });
+    fetchUser();
   }, [fetchUser]);
+
+  const handleEditClick = (id: GridRowId) => () => {
+    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+  };
+
+  const handleRoleClick = (id: GridRowId) => async () => {
+    setLoadingModal(true);
+    setIsModalRoleOpen(true);
+    rolesForm.setFieldsValue({ userIdRoles: id });
+    const listRole = await roleUser();
+    const currentRoles = await currentRoleUser({ userId: id.toString() });
+
+    if (currentRoles.success) {
+      setRole(currentRoles.value.result);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: currentRoles.error,
+      });
+    }
+
+    if (listRole.success) {
+      setListRole(listRole.value.result);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: listRole.error,
+      });
+    }
+    setLoadingModal(false);
+  };
+
+  const handleCancelClick = (id: GridRowId) => () => {
+    setRowModesModel({
+      ...rowModesModel,
+      [id]: { mode: GridRowModes.View, ignoreModifications: true },
+    });
+  };
+
+  const handleSaveClick = (id: GridRowId) => () => {
+    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
+  };
+
+  const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
+    setRowModesModel(newRowModesModel);
+  };
+
+  const processRowUpdate = async (newRow: GridRowModel) => {
+    const updateRow = await updateUsers({
+      userId: newRow.id,
+      inActive: newRow.inActive,
+      fullname: newRow.name,
+      phone: newRow.phone,
+      email: newRow.email,
+      bod: newRow.dateOfBirth,
+      leader: newRow.leader,
+      updatedBy: session?.user?.name ?? "",
+    });
+
+    if (updateRow.success) {
+      setUserList((prevRows) =>
+        prevRows.map((row) =>
+          row.id === newRow.id
+            ? { ...newRow, updatedAt: dayjs().toDate() }
+            : row
+        )
+      );
+      return newRow;
+    } else {
+      return newRow;
+    }
+  };
+
+  const handleRowEditStop: GridEventListener<"rowEditStop"> = (
+    params,
+    event
+  ) => {
+    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
+      event.defaultMuiPrevented = true;
+    }
+  };
 
   return (
     <Layout>
@@ -144,6 +222,7 @@ export default function Home() {
                   onFinish={async (value) => {
                     try {
                       setLoading(true);
+                      setLoadingTable(true);
                       const createUser = await createInternalUser({
                         email: value.email,
                         fullname: value.fullname,
@@ -156,10 +235,24 @@ export default function Home() {
                       });
 
                       if (createUser.success) {
-                        fetchUser({
-                          skip: Math.max(0, (currentPage - 1) * 100),
-                          take: 100,
-                        });
+                        setUserList((prevUser) => [
+                          ...prevUser,
+                          {
+                            id: createUser.value?.id,
+                            createdAt: createUser.value?.createdAt,
+                            createdBy: createUser.value?.createdBy,
+                            dateOfBirth: createUser.value?.dateOfBirth,
+                            email: createUser.value?.email,
+                            inActive: createUser.value?.inActive,
+                            leader: createUser.value?.leader,
+                            name: createUser.value?.name,
+                            phone: createUser.value?.phone,
+                            role: [] as any[],
+                            updatedAt: createUser.value?.updatedAt,
+                            updatedBy: createUser.value?.updatedBy,
+                            username: createUser.value?.username,
+                          },
+                        ]);
                         addForm.resetFields();
                         messageApi.open({
                           type: "success",
@@ -172,6 +265,7 @@ export default function Home() {
                         });
                       }
                       setLoading(false);
+                      setLoadingTable(false);
                     } catch (e: any) {
                       messageApi.open({
                         type: "error",
@@ -266,168 +360,107 @@ export default function Home() {
               </Card>
             </div>
 
-            <Form
-              name="searchForm"
-              layout="inline"
-              onFinish={async (value) => {
-                setLoading(true);
-
-                const searchUser = await searchUsers({
-                  searchText: value.search,
-                });
-
-                if (searchUser.success) {
-                  setUserList(searchUser.value);
-                  setTotalPage(0);
-                  setCurrentPage(0);
-                } else {
-                  messageApi.open({
-                    type: "error",
-                    content: searchUser.error,
-                  });
-                }
-
-                setLoading(false);
-              }}
-              autoComplete="off"
-              className="my-2"
-            >
-              <Form.Item
-                label="Search"
-                name="search"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your search!",
-                  },
-                ]}
-              >
-                <Input placeholder="Product Name or Product Code" />
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="submit"
-                    block
-                  >
-                    Search
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="button"
-                    block
-                    onClick={() => {
-                      setTotalPage(0);
-                      setCurrentPage(0);
-                      fetchUser({ take: 100, skip: 0 });
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-            </Form>
             <div style={{ height: 500, width: "100%", marginTop: 10 }}>
-              <DataGrid
+              <DataGridPremium
+                rowModesModel={rowModesModel}
+                onRowModesModelChange={handleRowModesModelChange}
+                onRowEditStop={handleRowEditStop}
+                processRowUpdate={processRowUpdate}
+                loading={loadingTable}
+                pageSizeOptions={[10, 100, 1000]}
+                rows={userList}
+                disableRowSelectionOnClick
+                headerFilters
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 1000, page: 0 },
+                  },
+                }}
                 slots={{
                   toolbar: () => (
-                    <div className="flex items-center m-2">
-                      <GridToolbarQuickFilter placeholder="Filter by data table" />
-                    </div>
+                    <GridToolbarContainer>
+                      <GridToolbarQuickFilter />
+                      <GridToolbarColumnsButton />
+                      <GridToolbarFilterButton />
+                      <GridToolbarDensitySelector
+                        slotProps={{ tooltip: { title: "Change density" } }}
+                      />
+                    </GridToolbarContainer>
                   ),
                 }}
-                pagination={true}
-                getRowHeight={() => "auto"}
-                rowSelection={false}
-                rows={userList}
+                pagination
+                disableColumnResize={false}
                 columns={[
                   {
                     field: "actions",
                     type: "actions",
-                    getActions: (params: GridRowParams) => [
-                      <GridActionsCellItem
-                        key={params.id.toString()}
-                        icon={<FaEdit />}
-                        onClick={() => {
-                          setIsModalEditOpen(true);
-                          editForm.setFieldsValue({
-                            userId: params.id.toString(),
-                          });
-                        }}
-                        label="Edit"
-                        showInMenu
-                      />,
-                      <GridActionsCellItem
-                        key={params.id.toString()}
-                        icon={<PiUserGearFill />}
-                        onClick={async () => {
-                          setIdEdit(params.id.toString());
-                          setRole(params.row.role);
-                          rolesForm.setFieldsValue({
-                            userIdRoles: params.id.toString(),
-                          });
+                    headerName: "Actions",
+                    width: 100,
+                    cellClassName: "actions",
+                    getActions: ({ id }) => {
+                      const isInEditMode =
+                        rowModesModel[id]?.mode === GridRowModes.Edit;
 
-                          setIsModalRoleOpen(true);
+                      if (isInEditMode) {
+                        return [
+                          <GridActionsCellItem
+                            key={id.toString()}
+                            icon={<FaSave />}
+                            label="Save"
+                            sx={{
+                              color: "primary.main",
+                            }}
+                            onClick={handleSaveClick(id)}
+                          />,
+                          <GridActionsCellItem
+                            key={id.toString()}
+                            icon={<MdCancel />}
+                            label="Cancel"
+                            className="textPrimary"
+                            color="inherit"
+                            onClick={handleCancelClick(id)}
+                          />,
+                        ];
+                      }
 
-                          const listRole = await roleUser();
-
-                          if (listRole.success) {
-                            setListRole(listRole.value.result);
-                          } else {
-                            messageApi.open({
-                              type: "error",
-                              content: listRole.error,
-                            });
-                          }
-                        }}
-                        label="Role"
-                        showInMenu
-                      />,
-                      <GridActionsCellItem
-                        key={params.id.toString()}
-                        icon={<MdDisabledByDefault />}
-                        onClick={async () => {
-                          const disableUser = await disableUsers({
-                            updatedBy: session?.user?.name ?? undefined,
-                            idEdit: params.id.toString(),
-                            disable: !params.row.inActive,
-                          });
-
-                          if (disableUser.success) {
-                            fetchUser({
-                              skip: Math.max(0, (currentPage - 1) * 100),
-                              take: 100,
-                            });
-                          } else {
-                            messageApi.open({
-                              type: "error",
-                              content: disableUser.error,
-                            });
-                          }
-                        }}
-                        label={`${params.row.inActive ? "Enable" : "Disable"}`}
-                        showInMenu
-                      />,
-                    ],
+                      return [
+                        <GridActionsCellItem
+                          key={id.toString()}
+                          icon={<FaEdit />}
+                          label="Edit"
+                          className="textPrimary"
+                          color="inherit"
+                          onClick={handleEditClick(id)}
+                        />,
+                        <GridActionsCellItem
+                          key={id.toString()}
+                          icon={<PiUserGearFill />}
+                          label="Roles"
+                          className="textPrimary"
+                          color="inherit"
+                          onClick={handleRoleClick(id)}
+                        />,
+                      ];
+                    },
                   },
+
                   {
                     field: "inActive",
-                    headerName: "disable",
+                    headerName: "Inactive",
                     type: "boolean",
                     width: 120,
+                    editable: true,
                   },
                   {
                     field: "name",
                     headerName: "Nama Lengkap",
+                    minWidth: 250,
+                    headerAlign: "center",
+                    editable: true,
+                  },
+                  {
+                    field: "username",
+                    headerName: "Username",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
@@ -437,28 +470,32 @@ export default function Home() {
                     headerName: "Email",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
                     field: "phone",
                     headerName: "No. HP",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
                     field: "dateOfBirth",
                     headerName: "Tanggal Lahir",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    type: "date",
+                    editable: true,
+                    valueFormatter: (params) => {
+                      dayjs(params, "DD-MM-YYYY").toDate();
+                    },
                   },
                   {
                     field: "leader",
                     headerName: "Leader / Atasan",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
                     field: "role",
@@ -472,7 +509,7 @@ export default function Home() {
                           {_.map(
                             params.formattedValue,
                             (item) => item.name
-                          ).join(",")}
+                          ).join(", ")}
                         </span>
                       );
                     },
@@ -491,8 +528,6 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                   {
                     field: "updatedBy",
@@ -508,28 +543,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                 ]}
-              />
-            </div>
-
-            <div className="flex justify-center py-4">
-              <Pagination
-                count={totalPage}
-                page={currentPage}
-                onChange={async (
-                  event: React.ChangeEvent<unknown>,
-                  value: number
-                ) => {
-                  setCurrentPage(value);
-                  fetchUser({
-                    skip: Math.max(0, (value - 1) * 100),
-                    take: 100,
-                  });
-                }}
-                shape="rounded"
               />
             </div>
           </div>
@@ -537,125 +552,13 @@ export default function Home() {
       </Layout>
 
       <Modal
-        title="Edit User"
-        open={isModalEditOpen}
-        onCancel={() => {
-          setIsModalEditOpen(false);
-          editForm.resetFields();
-        }}
-        footer={null}
-        destroyOnClose={true}
-      >
-        <Form
-          name="editUser"
-          layout="vertical"
-          form={editForm}
-          labelCol={{ span: 24 }}
-          wrapperCol={{ span: 24 }}
-          onFinish={async (value) => {
-            setLoading(true);
-            const userUpdate = await updateUsers({
-              idEdit: value.userId,
-              updatedBy: session?.user?.name ?? undefined,
-              fullname: value.fullname,
-              phone: value.phone,
-              email: value.email,
-              leader: value.leader,
-              bod: dayjs(value.dateofbirth).format("DD-MM-YYYY"),
-            });
-
-            if (userUpdate.success) {
-              fetchUser({
-                skip: Math.max(0, (currentPage - 1) * 100),
-                take: 100,
-              });
-              editForm.resetFields();
-              setIsModalEditOpen(false);
-              messageApi.open({
-                type: "success",
-                content: "Update berhasil.",
-              });
-            } else {
-              messageApi.open({
-                type: "error",
-                content: userUpdate.error,
-              });
-            }
-
-            setLoading(false);
-          }}
-          autoComplete="off"
-          onValuesChange={onValuesChange}
-        >
-          <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-            <Form.Item name="userId" hidden>
-              <Input />
-            </Form.Item>
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item label="fullname" name="fullname">
-                <Input maxLength={100} />
-              </Form.Item>
-            </Col>
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="email"
-                name="email"
-                rules={[
-                  {
-                    message: "Please input your email!",
-                    type: "email",
-                  },
-                ]}
-              >
-                <Input type="email" maxLength={100} />
-              </Form.Item>
-            </Col>
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item label="No. HP" name="phone">
-                <Input maxLength={15} placeholder="086562562566" />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item label="Tanggal lahir" name="dateofbirth">
-                <DatePicker className="w-full" format={"DD-MM-YYYY"} />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item label="Atasan/Leader" name="leader">
-                <Input maxLength={100} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
-            <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-              <Button
-                loading={loading}
-                type="primary"
-                htmlType="submit"
-                block
-                disabled={!isFormFilled}
-              >
-                Update User
-              </Button>
-            </ConfigProvider>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal
         title="Add Role"
         open={isModalRoleOpen}
+        loading={loadingModal}
         onCancel={() => {
           setIsModalRoleOpen(false);
           setRole([]);
 
-          fetchUser({
-            skip: Math.max(0, (currentPage - 1) * 100),
-            take: 100,
-          });
           rolesForm.resetFields();
         }}
         footer={null}
@@ -673,15 +576,38 @@ export default function Home() {
 
               const addRole = await addRoles({
                 idRole: value.roles,
-                id: session?.user?.id as string,
-                idEdit: value.userIdRoles,
+                userId: value.userIdRoles,
+                createdBy: session?.user?.name as string,
               });
 
               if (addRole.success) {
+                setUserList((prevRows) =>
+                  prevRows.map((row) =>
+                    row.id === value.userIdRoles
+                      ? {
+                          ...row,
+                          role: [
+                            ...row.role,
+                            { id: addRole.value.id, name: addRole.value.name },
+                          ],
+                        }
+                      : row
+                  )
+                );
+
                 setRole((prevRoles) => [
                   ...prevRoles,
-                  { id: value.id, name: value.name },
+                  {
+                    id: addRole.value.id,
+                    name: addRole.value.name,
+                    userId: value.userIdRoles,
+                  },
                 ]);
+
+                messageApi.open({
+                  type: "success",
+                  content: "Role berhasil di tambahkan.",
+                });
               } else {
                 messageApi.open({
                   type: "error",
@@ -728,31 +654,45 @@ export default function Home() {
                   <Button
                     type="link"
                     loading={loading}
-                    onClick={() => {
+                    onClick={async () => {
                       setLoading(true);
-                      deleteRoles({
-                        id: idEdit,
+
+                      const deleteRole = await deleteRoles({
+                        id: item.userId,
                         idRole: item.id,
-                      })
-                        .then((value) => {
-                          if (value) {
-                            const final = _.reject(isRole, { id: item.id });
-                            setRole(final);
-                            messageApi.open({
-                              type: "success",
-                              content: "Role berhasil di hapus.",
-                            });
-                          }
-                        })
-                        .catch((e) => {
-                          messageApi.open({
-                            type: "error",
-                            content: e.message,
-                          });
-                        })
-                        .finally(() => {
-                          setLoading(false);
+                      });
+
+                      if (deleteRole.success) {
+                        setUserList((prevRows) =>
+                          prevRows.map((row) =>
+                            row.id === item.userId
+                              ? {
+                                  ...row,
+                                  role: _.reject(row.role, {
+                                    id: item.id,
+                                  }),
+                                }
+                              : row
+                          )
+                        );
+
+                        setRole((prevRole) =>
+                          _.reject(prevRole, { id: item.id })
+                        );
+
+                        console.log(userList);
+
+                        messageApi.open({
+                          type: "success",
+                          content: "Role berhasil di hapus.",
                         });
+                      } else {
+                        messageApi.open({
+                          type: "error",
+                          content: deleteRole.error,
+                        });
+                      }
+                      setLoading(false);
                     }}
                     key="list-loadmore-edit"
                   >

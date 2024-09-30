@@ -55,8 +55,6 @@ export default function Home() {
   const [messageApi, contextHolder] = message.useMessage();
   const [productList, setProductList] = React.useState<any[]>([]);
   const [unit, setUnit] = React.useState<any[]>([]);
-  const [totalPage, setTotalPage] = React.useState<number>(0);
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
 
   const fetchAllProduct = React.useCallback(async () => {
     setLoadingTable(true);
@@ -64,7 +62,6 @@ export default function Home() {
 
     if (product.success) {
       setProductList(product.value.serializedProducts as any);
-      setTotalPage(Math.ceil(product.value.count / 100));
     } else {
       messageApi.open({
         type: "error",

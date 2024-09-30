@@ -28,6 +28,7 @@ export async function paginationListUser({
           createdAt: true,
           updatedAt: true,
           leader: true,
+          username: true,
           role: {
             select: {
               id: true,
@@ -41,6 +42,40 @@ export async function paginationListUser({
     ]);
 
     return { result, count };
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function listAllUser() {
+  try {
+    const [result] = await prisma.$transaction([
+      prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          dateOfBirth: true,
+          email: true,
+          inActive: true,
+          createdBy: true,
+          updatedBy: true,
+          createdAt: true,
+          updatedAt: true,
+          leader: true,
+          username: true,
+          role: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    return { result };
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }

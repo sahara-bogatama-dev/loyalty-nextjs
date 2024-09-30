@@ -6,20 +6,22 @@ const prisma = new PrismaClient();
 
 export async function updateUser({
   updatedBy,
-  idEdit,
+  userId,
   fullname,
   phone,
   email,
   bod,
   leader,
+  inActive,
 }: {
-  idEdit?: string;
+  userId?: string;
   updatedBy?: string;
   fullname?: string;
   phone?: string;
   email?: string;
   bod?: string;
   leader?: string;
+  inActive?: boolean;
 }) {
   try {
     return prisma.$transaction(async (tx) => {
@@ -29,11 +31,12 @@ export async function updateUser({
       if (email) updateData.email = email;
       if (bod) updateData.dateOfBirth = bod;
       if (leader) updateData.leader = leader;
+      if (inActive !== undefined) updateData.inActive = inActive;
 
       updateData.updatedBy = updatedBy;
 
       const updateUser = await tx.user.update({
-        where: { id: idEdit },
+        where: { id: userId },
         data: updateData,
       });
 
