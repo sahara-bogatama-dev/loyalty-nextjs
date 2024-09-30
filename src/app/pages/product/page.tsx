@@ -464,8 +464,6 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                   {
                     field: "updatedBy",
@@ -481,8 +479,6 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params).format("DD/MM/YYYY hh:mm"),
                   },
                 ]}
               />
