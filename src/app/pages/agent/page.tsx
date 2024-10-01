@@ -134,7 +134,7 @@ export default function Home() {
     if (updateRow.success) {
       setAgentList((prevRows) =>
         prevRows.map((row) =>
-          row.id === newRow.agentId
+          row.agentId === newRow.agentId
             ? {
                 ...newRow,
                 updatedAt: dayjs().toDate(),

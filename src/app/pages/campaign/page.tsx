@@ -260,7 +260,7 @@ export default function Home() {
     if (updateRow.success) {
       setCampaignList((prevRows) =>
         prevRows.map((row) =>
-          row.id === newRow.campaignId
+          row.campaignId === newRow.campaignId
             ? {
                 ...newRow,
                 updatedAt: dayjs().toDate(),
