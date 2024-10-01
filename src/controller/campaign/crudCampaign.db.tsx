@@ -78,6 +78,7 @@ export interface Campaigns {
   description?: string;
   createdBy?: string;
   updatedBy?: any;
+  inActive?: boolean;
   oldProductId?: string[];
 }
 
@@ -179,6 +180,7 @@ export async function updateCampaign({
   description,
   campaignId,
   updatedBy,
+  inActive,
 }: Campaigns) {
   try {
     return prisma.$transaction(async (tx) => {
@@ -188,6 +190,7 @@ export async function updateCampaign({
       if (endDate) updateData.endDate = endDate;
       if (loyaltyPoint) updateData.loyaltyPoint = loyaltyPoint;
       if (description) updateData.description = description;
+      if (inActive !== undefined) updateData.inActive = inActive;
 
       updateData.updatedBy = updatedBy;
 

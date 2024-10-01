@@ -97,6 +97,7 @@ const updateCampaigns = createServerAction(
     loyaltyPoint,
     description,
     campaignId,
+    inActive,
     updatedBy,
   }: Campaigns) => {
     try {
@@ -110,6 +111,7 @@ const updateCampaigns = createServerAction(
         description,
         campaignId,
         updatedBy,
+        inActive,
       });
 
       return data;

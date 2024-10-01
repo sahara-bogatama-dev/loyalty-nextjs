@@ -253,6 +253,7 @@ export default function Home() {
       endDate: newRow.endDate,
       loyaltyPoint: newRow.loyaltyPoint,
       description: newRow.description,
+      inActive: newRow.inActive,
       updatedBy: session?.user?.name ?? "",
     });
 
