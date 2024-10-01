@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 export async function listProduct() {
   try {
     return prisma.$transaction(async (tx) => {
-      const currentDate = new Date();
       const productList = await tx.product.findMany({
         where: {
           campaignId: null,
@@ -70,13 +69,13 @@ export const listCampaignActive = () => {
 
 export interface Campaigns {
   campaignId?: string;
-  campaignName: string;
-  startDate: string;
-  endDate: string;
-  productId: string[];
-  loyaltyPoint: number;
-  image: any;
-  description: string;
+  campaignName?: string;
+  startDate?: string;
+  endDate?: string;
+  productId?: string[];
+  loyaltyPoint?: number;
+  image?: any;
+  description?: string;
   createdBy?: string;
   updatedBy?: any;
   oldProductId?: string[];
@@ -96,12 +95,12 @@ export async function addCampaign({
     return prisma.$transaction(async (tx) => {
       const addCampaign = await tx.campaign.create({
         data: {
-          campaignName,
-          startDate,
-          endDate,
-          loyaltyPoint,
+          campaignName: campaignName ?? "",
+          startDate: startDate ?? new Date(),
+          endDate: endDate ?? new Date(),
+          loyaltyPoint: loyaltyPoint ?? 0,
           photo: image,
-          description,
+          description: description ?? "",
           createdBy,
         },
       });
@@ -135,49 +134,19 @@ export async function campaignImage({ campaignId }: { campaignId: string }) {
   }
 }
 
-export async function searchCampaign({ findSearch }: { findSearch?: string }) {
-  try {
-    return prisma.$transaction(async (tx) => {
-      const search = await tx.campaign.findMany({
-        where: {
-          OR: [{ campaignName: { contains: findSearch } }],
-        },
-        orderBy: { createdAt: "asc" },
-        select: {
-          campaignId: true,
-          campaignName: true,
-          loyaltyPoint: true,
-          description: true,
-          startDate: true,
-          endDate: true,
-          createdAt: true,
-          createdBy: true,
-          updatedAt: true,
-          updatedBy: true,
-          inActive: true,
-        },
-      });
-
-      return search;
-    });
-  } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
-  }
-}
-
 export async function disableCampaign({
   updatedBy,
   disable,
-  idEdit,
+  campaignId,
 }: {
   updatedBy?: string;
-  idEdit?: string;
+  campaignId?: string;
   disable?: boolean;
 }) {
   try {
     return prisma.$transaction(async (tx) => {
       const updateCampaign = await tx.campaign.update({
-        where: { campaignId: idEdit },
+        where: { campaignId },
         data: { inActive: disable, updatedBy: updatedBy },
       });
 
@@ -188,11 +157,11 @@ export async function disableCampaign({
   }
 }
 
-export async function deleteCampaign({ idEdit }: { idEdit?: string }) {
+export async function deleteCampaign({ campaignId }: { campaignId?: string }) {
   try {
     return prisma.$transaction(async (tx) => {
       const deletes = await tx.campaign.delete({
-        where: { campaignId: idEdit },
+        where: { campaignId },
       });
 
       return deletes;
@@ -204,11 +173,8 @@ export async function deleteCampaign({ idEdit }: { idEdit?: string }) {
 
 export async function updateCampaign({
   campaignName,
-  productId,
-  oldProductId,
   startDate,
   endDate,
-  image,
   loyaltyPoint,
   description,
   campaignId,
@@ -216,35 +182,67 @@ export async function updateCampaign({
 }: Campaigns) {
   try {
     return prisma.$transaction(async (tx) => {
+      const updateData: any = {};
+      if (campaignName) updateData.campaignName = campaignName;
+      if (startDate) updateData.startDate = startDate;
+      if (endDate) updateData.endDate = endDate;
+      if (loyaltyPoint) updateData.loyaltyPoint = loyaltyPoint;
+      if (description) updateData.description = description;
+
+      updateData.updatedBy = updatedBy;
+
       const updateCampaign = await tx.campaign.update({
         where: { campaignId },
-        data: {
-          campaignName,
-          startDate,
-          endDate,
-          photo: image,
-          loyaltyPoint,
-          description,
-          updatedBy,
-        },
+        data: updateData,
       });
 
-      if (updateCampaign) {
-        console.log(oldProductId);
-        if (oldProductId) {
-          await tx.product.updateMany({
-            where: { productId: { in: oldProductId } },
-            data: { campaignId: null, updatedBy },
-          });
-        }
+      return updateCampaign;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
 
-        const setNewProductId = await tx.product.updateMany({
-          where: { productId: { in: productId } },
-          data: { campaignId: campaignId, updatedBy },
+export async function updateCampaignProduct({
+  oldProductId,
+  productId,
+  campaignId,
+  updatedBy,
+}: Campaigns) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      if (oldProductId) {
+        await tx.product.updateMany({
+          where: { productId: { in: oldProductId } },
+          data: { campaignId: null, updatedBy },
         });
-
-        return setNewProductId;
       }
+
+      const setNewProductId = await tx.product.updateMany({
+        where: { productId: { in: productId } },
+        data: { campaignId: campaignId, updatedBy },
+      });
+
+      return setNewProductId;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function updateCampaignImage({
+  image,
+  campaignId,
+  updatedBy,
+}: Campaigns) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const updateCampaign = await tx.campaign.update({
+        where: { campaignId },
+        data: { photo: image, updatedBy },
+      });
+
+      return updateCampaign;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

@@ -17,7 +17,8 @@ import HeaderBar from "@/app/component/header.comp";
 
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import { Carousel } from "react-responsive-carousel";
-import { listCampaignActives, userRoles } from "@/controller/action";
+import { userRoles } from "@/controller/listUser/action";
+import { listCampaignActives } from "@/controller/campaign/action";
 import _ from "lodash";
 import {
   BarChart,

@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 
 export interface Agents {
   agentId?: string;
-  customerName: string;
-  picName: string;
-  phone: string;
-  picPhone: string;
-  email: string;
+  customerName?: string;
+  picName?: string;
+  phone?: string;
+  picPhone?: string;
+  email?: string;
   noNpwp?: string;
-  storeAddress: string;
+  storeAddress?: string;
   createdBy?: string;
   updatedBy?: string;
 }
@@ -29,14 +29,14 @@ export async function addAgent({
     return prisma.$transaction(async (tx) => {
       const addAgent = await tx.agent.create({
         data: {
-          customerName,
+          customerName: customerName ?? "",
           createdBy,
-          picName,
-          phone,
-          picPhone,
-          email,
+          picName: picName ?? "",
+          phone: phone ?? "",
+          picPhone: picPhone ?? "",
+          email: email ?? "",
           noNpwp,
-          storeAddress,
+          storeAddress: storeAddress ?? "",
         },
       });
 
@@ -60,56 +60,23 @@ export async function updateAgent({
 }: Agents) {
   try {
     return prisma.$transaction(async (tx) => {
+      const updateData: any = {};
+      if (customerName) updateData.customerName = customerName;
+      if (picName) updateData.picName = picName;
+      if (phone) updateData.phone = phone;
+      if (picPhone) updateData.picPhone = picPhone;
+      if (email) updateData.email = email;
+      if (noNpwp) updateData.noNpwp = noNpwp;
+      if (storeAddress) updateData.storeAddress = storeAddress;
+
+      updateData.updatedBy = updatedBy;
+
       const addAgent = await tx.agent.update({
-        where: {
-          agentId,
-        },
-        data: {
-          customerName,
-          updatedBy,
-          picName,
-          phone,
-          picPhone,
-          email,
-          noNpwp,
-          storeAddress,
-        },
+        where: { agentId },
+        data: updateData,
       });
 
       return addAgent;
-    });
-  } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
-  }
-}
-
-export async function searchAgent({ findSearch }: { findSearch?: string }) {
-  try {
-    return prisma.$transaction(async (tx) => {
-      const searchAgent = await tx.agent.findMany({
-        where: {
-          OR: [
-            { customerName: { contains: findSearch } },
-            { noNpwp: { contains: findSearch } },
-            { email: { contains: findSearch } },
-          ],
-        },
-        orderBy: { createdAt: "asc" },
-      });
-
-      return searchAgent;
-    });
-  } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
-  }
-}
-
-export async function downloadAgent() {
-  try {
-    return prisma.$transaction(async (tx) => {
-      const agentList = await tx.agent.findMany();
-
-      return agentList;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

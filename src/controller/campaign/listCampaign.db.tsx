@@ -3,18 +3,10 @@ import _ from "lodash";
 
 const prisma = new PrismaClient();
 
-export async function paginationListCampaign({
-  skip,
-  take,
-}: {
-  skip: number;
-  take: number;
-}) {
+export async function listDataCampaign() {
   try {
-    const [result, count] = await prisma.$transaction([
+    const [result] = await prisma.$transaction([
       prisma.campaign.findMany({
-        skip,
-        take,
         orderBy: { createdAt: "asc" },
         select: {
           campaignId: true,
@@ -30,10 +22,9 @@ export async function paginationListCampaign({
           inActive: true,
         },
       }),
-      prisma.campaign.count(),
     ]);
 
-    return { result, count };
+    return { result };
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }

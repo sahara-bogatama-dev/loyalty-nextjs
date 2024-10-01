@@ -159,13 +159,27 @@ export default function Home() {
       setUserList((prevRows) =>
         prevRows.map((row) =>
           row.id === newRow.id
-            ? { ...newRow, updatedAt: dayjs().toDate() }
+            ? {
+                ...newRow,
+                updatedAt: dayjs().toDate(),
+                updatedBy: session?.user?.name ?? "",
+              }
             : row
         )
       );
       return newRow;
     } else {
-      return newRow;
+      messageApi.open({
+        type: "error",
+        content: updateRow.error,
+      });
+      setRowModesModel({
+        ...rowModesModel,
+        [newRow.id]: {
+          mode: GridRowModes.View,
+          ignoreModifications: true,
+        },
+      });
     }
   };
 
