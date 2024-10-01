@@ -1,66 +1,27 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import React from "react";
 import {
   Button,
   Layout,
   theme,
   Breadcrumb,
-  Card,
   Form,
   Input,
   message,
   ConfigProvider,
-  Row,
-  Col,
-  InputNumber,
-  Select,
-  Upload,
   DatePicker,
   Modal,
-  InputProps,
-  Table,
 } from "antd";
 import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
-import {
-  addAgents,
-  addCampaigns,
-  currentProducts,
-  dataMember,
-  deleteAgents,
-  deleteCampaigns,
-  disableCampaigns,
-  downloadAgents,
-  listProducts,
-  paginationAgent,
-  paginationCampaign,
-  paginationOwner,
-  searchAgens,
-  searchCampaigns,
-  updateAgents,
-  updateCampaigns,
-} from "@/controller/action";
+import { dataMember, paginationOwner } from "@/controller/action";
 import HeaderBar from "@/app/component/header.comp";
-import {
-  DataGrid,
-  GridActionsCellItem,
-  GridRowParams,
-  GridToolbarQuickFilter,
-} from "@mui/x-data-grid";
+import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { Pagination } from "@mui/material";
 import _ from "lodash";
 import moment from "moment";
-import { MdAddPhotoAlternate } from "react-icons/md";
-import { RcFile } from "antd/es/upload";
-import getBase64 from "@/lib/arrayBufferToBase64";
-import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { MdDisabledByDefault } from "react-icons/md";
-import dayjs from "dayjs";
-import MaskedInput from "antd-mask-input";
-import * as XLSX from "xlsx";
 
 import { DataGridPremium, GridToolbar } from "@mui/x-data-grid-premium";
 
@@ -149,75 +110,6 @@ export default function Home() {
               borderRadius: borderRadiusLG,
             }}
           >
-            <Form
-              name="searchForm"
-              layout="inline"
-              onFinish={async (value) => {
-                setLoading(true);
-
-                const searchAgent = await searchAgens({
-                  searchText: value.search,
-                });
-
-                if (searchAgent.success) {
-                  setBoothList(searchAgent.value);
-                  setTotalPage(0);
-                  setCurrentPage(0);
-                } else {
-                  messageApi.open({
-                    type: "error",
-                    content: searchAgent.error,
-                  });
-                }
-
-                setLoading(false);
-              }}
-              autoComplete="off"
-              className="my-2"
-            >
-              <Form.Item
-                label="Search"
-                name="search"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your search!",
-                  },
-                ]}
-              >
-                <Input placeholder="Campaign name" />
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="submit"
-                    block
-                  >
-                    Search
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="button"
-                    block
-                    onClick={() => {
-                      setTotalPage(0);
-                      setCurrentPage(0);
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-            </Form>
             <div style={{ height: 500, width: "100%", marginTop: 10 }}>
               <DataGridPremium
                 rows={boothList}
@@ -411,70 +303,6 @@ export default function Home() {
         width={1000}
         loading={loadingModal}
       >
-        <Form
-          name="searchForm"
-          layout="inline"
-          onFinish={async (value) => {
-            setLoading(true);
-
-            const searchAgent = await searchAgens({
-              searchText: value.search,
-            });
-
-            if (searchAgent.success) {
-              setBoothList(searchAgent.value);
-              setTotalPage(0);
-              setCurrentPage(0);
-            } else {
-              messageApi.open({
-                type: "error",
-                content: searchAgent.error,
-              });
-            }
-
-            setLoading(false);
-          }}
-          autoComplete="off"
-          className="my-2"
-        >
-          <Form.Item
-            label="Search"
-            name="search"
-            rules={[
-              {
-                required: true,
-                message: "Please input your search!",
-              },
-            ]}
-          >
-            <Input placeholder="Campaign name" />
-          </Form.Item>
-
-          <Form.Item>
-            <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-              <Button loading={loading} type="primary" htmlType="submit" block>
-                Search
-              </Button>
-            </ConfigProvider>
-          </Form.Item>
-
-          <Form.Item>
-            <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-              <Button
-                loading={loading}
-                type="primary"
-                htmlType="button"
-                block
-                onClick={() => {
-                  setTotalPage(0);
-                  setCurrentPage(0);
-                }}
-              >
-                Reset
-              </Button>
-            </ConfigProvider>
-          </Form.Item>
-        </Form>
         <div style={{ height: 500, width: "100%", marginTop: 10 }}>
           <DataGrid
             getRowHeight={() => "auto"}
