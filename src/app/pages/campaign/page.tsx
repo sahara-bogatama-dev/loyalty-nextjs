@@ -27,14 +27,12 @@ import {
   changeImageCampaign,
   currentProducts,
   deleteCampaigns,
-  disableCampaigns,
   listProducts,
   updateCampaigns,
   updateProductCampaign,
 } from "@/controller/campaign/action";
 import HeaderBar from "@/app/component/header.comp";
 import {
-  DataGrid,
   DataGridPremium,
   GridActionsCellItem,
   GridEventListener,
@@ -43,7 +41,6 @@ import {
   GridRowModel,
   GridRowModes,
   GridRowModesModel,
-  GridRowParams,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   GridToolbarDensitySelector,
@@ -51,15 +48,14 @@ import {
   GridToolbarFilterButton,
   GridToolbarQuickFilter,
 } from "@mui/x-data-grid-premium";
-import { Box, Pagination } from "@mui/material";
+import { Box } from "@mui/material";
 import _ from "lodash";
-import moment from "moment";
 import { MdAddPhotoAlternate, MdCancel, MdPhoto } from "react-icons/md";
 import { RcFile, UploadProps } from "antd/es/upload";
 import getBase64 from "@/lib/arrayBufferToBase64";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
-import { FaBoxOpen, FaEdit, FaInbox, FaSave, FaTrash } from "react-icons/fa";
+import { FaBoxOpen, FaEdit, FaInbox, FaSave } from "react-icons/fa";
 import dayjs from "dayjs";
 import { FaFileImage, FaTrashCan } from "react-icons/fa6";
 
@@ -436,8 +432,9 @@ export default function Home() {
                           content: "Campaign sudah ditambahkan.",
                         });
 
-                        console.log(campaignList);
                         addForm.resetFields();
+                        fetchCampaign();
+                        fetchProduct();
                       } else {
                         messageApi.open({
                           type: "error",

@@ -3,18 +3,10 @@ import _ from "lodash";
 
 const prisma = new PrismaClient();
 
-export async function paginationListPackageRedeem({
-  skip,
-  take,
-}: {
-  skip: number;
-  take: number;
-}) {
+export async function listDataPackageRedeem() {
   try {
-    const [result, count] = await prisma.$transaction([
+    const [result] = await prisma.$transaction([
       prisma.packageRedeem.findMany({
-        skip,
-        take,
         orderBy: { createdAt: "asc" },
         select: {
           packageDesc: true,
@@ -29,10 +21,9 @@ export async function paginationListPackageRedeem({
           updatedBy: true,
         },
       }),
-      prisma.packageRedeem.count(),
     ]);
 
-    return { result, count };
+    return { result };
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }

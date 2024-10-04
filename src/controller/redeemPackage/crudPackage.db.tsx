@@ -5,11 +5,12 @@ const prisma = new PrismaClient();
 
 export interface PackageRedeems {
   packageId?: string;
-  packageName: string;
-  costPoint: number;
-  limit: number;
+  packageName?: string;
+  costPoint?: number;
+  limit?: number;
   image?: any;
-  description: string;
+  description?: string;
+  inActive?: boolean;
   createdBy?: string;
   updatedBy?: any;
 }
@@ -27,7 +28,7 @@ export async function addPackage({
       const addPackage = await tx.packageRedeem.create({
         data: {
           packageName,
-          costPoint,
+          costPoint: costPoint ?? 0,
           limit,
           photo: image,
           packageDesc: description,
@@ -49,58 +50,6 @@ export async function packageImage({ packageId }: { packageId: string }) {
     ]);
 
     return result;
-  } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
-  }
-}
-
-export async function searchPackage({ findSearch }: { findSearch?: string }) {
-  try {
-    return prisma.$transaction(async (tx) => {
-      const search = await tx.packageRedeem.findMany({
-        where: {
-          OR: [{ packageName: { contains: findSearch } }],
-        },
-        orderBy: { createdAt: "asc" },
-        select: {
-          packageDesc: true,
-          packageId: true,
-          packageName: true,
-          limit: true,
-          costPoint: true,
-          inActive: true,
-          createdAt: true,
-          createdBy: true,
-          updatedAt: true,
-          updatedBy: true,
-        },
-      });
-
-      return search;
-    });
-  } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
-  }
-}
-
-export async function disablePackage({
-  updatedBy,
-  disable,
-  packageId,
-}: {
-  updatedBy?: string;
-  packageId?: string;
-  disable?: boolean;
-}) {
-  try {
-    return prisma.$transaction(async (tx) => {
-      const update = await tx.packageRedeem.update({
-        where: { packageId },
-        data: { inActive: disable, updatedBy: updatedBy },
-      });
-
-      return update;
-    });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }
@@ -129,25 +78,46 @@ export async function updatePackageRedeem({
   packageName,
   costPoint,
   limit,
-  image,
   description,
+  inActive,
   updatedBy,
 }: PackageRedeems) {
   try {
     return prisma.$transaction(async (tx) => {
-      const updateData = await tx.packageRedeem.update({
+      const updateData: any = {};
+      if (packageName) updateData.packageName = packageName;
+      if (costPoint) updateData.costPoint = costPoint;
+      if (limit) updateData.limit = limit;
+      if (description) updateData.description = description;
+      if (inActive !== undefined) updateData.inActive = inActive;
+
+      updateData.updatedBy = updatedBy;
+
+      const updateCampaign = await tx.packageRedeem.update({
         where: { packageId },
-        data: {
-          packageName,
-          costPoint,
-          limit,
-          photo: image,
-          packageDesc: description,
-          updatedBy,
-        },
+        data: updateData,
       });
 
-      return updateData;
+      return updateCampaign;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function updatePackageImage({
+  image,
+  packageId,
+  updatedBy,
+}: PackageRedeems) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const updateCampaign = await tx.packageRedeem.update({
+        where: { packageId },
+        data: { photo: image, updatedBy },
+      });
+
+      return updateCampaign;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

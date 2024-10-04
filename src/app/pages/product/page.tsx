@@ -223,6 +223,7 @@ export default function Home() {
                         });
                       }
                       setLoading(false);
+                      fetchAllProduct();
                     } catch (e: any) {
                       messageApi.open({
                         type: "error",

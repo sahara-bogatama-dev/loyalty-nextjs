@@ -20,45 +20,61 @@ import {
 } from "antd";
 import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
-import {
-  addPackages,
-  deletePackages,
-  disablePackages,
-  paginationPackage,
-  searchPackages,
-  updatePackage,
-} from "@/controller/action";
 import HeaderBar from "@/app/component/header.comp";
 import {
-  DataGrid,
+  DataGridPremium,
   GridActionsCellItem,
+  GridEventListener,
+  GridRowEditStopReasons,
+  GridRowId,
+  GridRowModel,
+  GridRowModes,
+  GridRowModesModel,
   GridRowParams,
+  GridToolbarColumnsButton,
+  GridToolbarContainer,
+  GridToolbarDensitySelector,
+  GridToolbarExport,
+  GridToolbarFilterButton,
   GridToolbarQuickFilter,
-} from "@mui/x-data-grid";
-import { Pagination } from "@mui/material";
+} from "@mui/x-data-grid-premium";
+import { Box, Pagination } from "@mui/material";
 import _ from "lodash";
 import moment from "moment";
-import { MdAddPhotoAlternate } from "react-icons/md";
-import { RcFile } from "antd/es/upload";
+import { MdAddPhotoAlternate, MdCancel, MdPhoto } from "react-icons/md";
+import { RcFile, UploadProps } from "antd/es/upload";
 import getBase64 from "@/lib/arrayBufferToBase64";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { MdDisabledByDefault } from "react-icons/md";
+import { FaEdit, FaFileImage, FaInbox, FaSave } from "react-icons/fa";
+import {
+  addPackages,
+  changeImagePackage,
+  deletePackages,
+  listPackage,
+  updatePackage,
+} from "@/controller/redeemPackage/action";
+import { FaTrashCan } from "react-icons/fa6";
 import dayjs from "dayjs";
 
 export default function Home() {
   const { Content } = Layout;
-  const { RangePicker } = DatePicker;
+  const { Dragger } = Upload;
 
   const [baseUrl, setBaseUrl] = React.useState("");
 
   const [addForm] = Form.useForm();
-  const [editForm] = Form.useForm();
 
   const [collapsed, setCollapsed] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [loadingModal, setLoadingModal] = React.useState(false);
+  const [loadingTable, setLoadingTable] = React.useState(false);
+  const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>(
+    {}
+  );
+
+  const [openImage, setOpenImage] = React.useState(false);
+
+  const [packageId, setPackageId] = React.useState("");
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -67,31 +83,23 @@ export default function Home() {
   const [messageApi, contextHolder] = message.useMessage();
   const [packageList, setPackageList] = React.useState<any[]>([]);
 
-  const [totalPage, setTotalPage] = React.useState<number>(0);
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const [isModalEditOpen, setIsModalEditOpen] = React.useState(false);
-
-  const fetchListPackage = React.useCallback(
-    async ({ take, skip }: { skip: number; take: number }) => {
-      const packageRedeem = await paginationPackage({ take, skip });
-      if (packageRedeem.success) {
-        setPackageList(packageRedeem.value.result as any);
-        setTotalPage(Math.ceil(packageRedeem.value.count / 100));
-      } else {
-        messageApi.open({
-          type: "error",
-          content: packageRedeem.error,
-        });
-      }
-    },
-    [messageApi]
-  );
+  const fetchListPackage = React.useCallback(async () => {
+    setLoadingTable(true);
+    const packageRedeem = await listPackage();
+    if (packageRedeem.success) {
+      setPackageList(packageRedeem.value.result as any);
+    } else {
+      console.log(packageRedeem.error);
+      messageApi.open({
+        type: "error",
+        content: packageRedeem.error,
+      });
+    }
+    setLoadingTable(false);
+  }, [messageApi]);
 
   React.useEffect(() => {
-    fetchListPackage({
-      skip: 0,
-      take: 100,
-    });
+    fetchListPackage();
 
     const { protocol, hostname, port } = window.location;
     setBaseUrl(`${protocol}//${hostname}${port ? `:${port}` : ""}`);
@@ -143,14 +151,162 @@ export default function Home() {
       .catch((error) => Promise.reject(error));
   };
 
-  const validateUploadEdit = (rule: any, value: any) => {
-    if (!value || value.fileList.length === 0) {
-      return Promise.resolve();
-    }
+  const handleEditClick = (id: GridRowId) => () => {
+    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+  };
 
-    return validateFile(value.fileList[0].originFileObj)
-      .then(() => Promise.resolve())
-      .catch((error) => Promise.reject(error));
+  const handleDeleteClick = (id: GridRowId) => async () => {
+    const deletes = await deletePackages({ packageId: id.toString() });
+
+    if (deletes.success) {
+      setPackageList(packageList.filter((row) => row.packageId !== id));
+    } else {
+      messageApi.open({
+        type: "error",
+        content: deletes.error,
+      });
+    }
+  };
+
+  const handleImageClick = (id: GridRowId) => () => {
+    setOpenImage(true);
+    setPackageId(id.toString());
+  };
+
+  const handleCancelClick = (id: GridRowId) => () => {
+    setRowModesModel({
+      ...rowModesModel,
+      [id]: { mode: GridRowModes.View, ignoreModifications: true },
+    });
+  };
+
+  const handleSaveClick = (id: GridRowId) => () => {
+    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
+  };
+
+  const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
+    setRowModesModel(newRowModesModel);
+  };
+
+  const processRowUpdate = async (newRow: GridRowModel) => {
+    const updateRow = await updatePackage({
+      packageId: newRow.packageId,
+      packageName: newRow.packageName,
+      costPoint: Number(newRow.costPoint),
+      limit: Number(newRow.limit),
+      description: newRow.description,
+      inActive: newRow.inActive,
+      updatedBy: session?.user?.name ?? "",
+    });
+
+    if (updateRow.success) {
+      setPackageList((prevRows) =>
+        prevRows.map((row) =>
+          row.packageId === newRow.packageId
+            ? {
+                ...newRow,
+                updatedAt: dayjs().toDate(),
+                updatedBy: session?.user?.name ?? "",
+              }
+            : row
+        )
+      );
+      return newRow;
+    } else {
+      messageApi.open({
+        type: "error",
+        content: updateRow.error,
+      });
+      setRowModesModel({
+        ...rowModesModel,
+        [newRow.campaignId]: {
+          mode: GridRowModes.View,
+          ignoreModifications: true,
+        },
+      });
+    }
+  };
+
+  const handleRowEditStop: GridEventListener<"rowEditStop"> = (
+    params,
+    event
+  ) => {
+    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
+      event.defaultMuiPrevented = true;
+    }
+  };
+
+  const props: UploadProps = {
+    name: "file",
+    multiple: false,
+    maxCount: 1,
+    accept: ".jpeg,.jpg",
+    beforeUpload(file) {
+      const maxSize = 500 * 1024;
+      const maxWidth = 864;
+      const maxHeight = 400;
+
+      return new Promise<void>((resolve, reject) => {
+        if (file.size > maxSize) {
+          messageApi.open({
+            type: "error",
+            content: "File size must be smaller than 500KB!",
+          });
+
+          return Upload.LIST_IGNORE;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          if (img.width !== maxWidth && img.height !== maxHeight) {
+            messageApi.open({
+              type: "error",
+              content: "Image dimensions must not exceed 864x400 pixels!",
+            });
+            reject("Image dimensions must not exceed 864x400 pixels!");
+          } else {
+            resolve();
+          }
+        };
+        img.onerror = () => {
+          reject("Invalid image file!");
+        };
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            img.src = e.target.result as string;
+          }
+        };
+        reader.onerror = () => {
+          reject("Error reading file!");
+        };
+        reader.readAsDataURL(file);
+      });
+    },
+    async onChange(info) {
+      const { status, originFileObj } = info.file;
+
+      if (status === "done") {
+        const base64 = (await getBase64(originFileObj as RcFile)) as string;
+
+        const uploadIMG = await changeImagePackage({
+          packageId: packageId,
+          image: base64.replace(/^data:image\/[a-z]+;base64,/, ""),
+          updatedBy: session?.user?.name ?? "",
+        });
+        if (uploadIMG.success) {
+          messageApi.success("Upload complete.");
+        } else {
+          messageApi.error(uploadIMG.error);
+        }
+      } else if (status === "error") {
+        messageApi.open({
+          type: "error",
+          content: "Image upload failed.",
+        });
+      }
+    },
   };
 
   return (
@@ -221,10 +377,7 @@ export default function Home() {
                         });
 
                         addForm.resetFields();
-                        fetchListPackage({
-                          skip: 0,
-                          take: 100,
-                        });
+                        fetchListPackage();
                       } else {
                         messageApi.open({
                           type: "error",
@@ -359,84 +512,41 @@ export default function Home() {
               </Card>
             </div>
 
-            <Form
-              name="searchForm"
-              layout="inline"
-              onFinish={async (value) => {
-                setLoading(true);
-                const search = await searchPackages({
-                  searchText: value.search,
-                });
-
-                if (search.success) {
-                  setPackageList(search.value);
-                  setTotalPage(0);
-                  setCurrentPage(0);
-                } else {
-                  messageApi.open({
-                    type: "error",
-                    content: search.error,
-                  });
-                }
-                setLoading(false);
-              }}
-              autoComplete="off"
-              className="my-2"
-            >
-              <Form.Item
-                label="Search"
-                name="search"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your search!",
-                  },
-                ]}
-              >
-                <Input placeholder="Package name" />
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="submit"
-                    block
-                  >
-                    Search
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-
-              <Form.Item>
-                <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-                  <Button
-                    loading={loading}
-                    type="primary"
-                    htmlType="button"
-                    block
-                    onClick={() => {
-                      setTotalPage(0);
-                      setCurrentPage(0);
-                      fetchListPackage({ take: 100, skip: 0 });
-                    }}
-                  >
-                    Reset
-                  </Button>
-                </ConfigProvider>
-              </Form.Item>
-            </Form>
             <div style={{ height: 500, width: "100%", marginTop: 10 }}>
-              <DataGrid
+              <DataGridPremium
+                rowModesModel={rowModesModel}
+                onRowModesModelChange={handleRowModesModelChange}
+                onRowEditStop={handleRowEditStop}
+                processRowUpdate={processRowUpdate}
                 slots={{
                   toolbar: () => (
-                    <div className="flex items-center m-2 gap-2">
-                      <GridToolbarQuickFilter placeholder="Filter by data table" />
-                    </div>
+                    <GridToolbarContainer>
+                      <GridToolbarQuickFilter />
+                      <GridToolbarColumnsButton />
+                      <GridToolbarFilterButton />
+                      <GridToolbarDensitySelector
+                        slotProps={{ tooltip: { title: "Change density" } }}
+                      />
+                      <Box sx={{ flexGrow: 1 }} />
+                      <GridToolbarExport
+                        slotProps={{
+                          tooltip: { title: "Export data" },
+                          button: { variant: "outlined" },
+                        }}
+                      />
+                    </GridToolbarContainer>
                   ),
                 }}
-                pagination={true}
+                loading={loadingTable}
+                pageSizeOptions={[10, 100, 1000]}
+                pagination
+                disableRowSelectionOnClick
+                headerFilters
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 1000, page: 0 },
+                  },
+                }}
                 getRowHeight={() => "auto"}
                 rowSelection={false}
                 rows={packageList}
@@ -445,130 +555,123 @@ export default function Home() {
                   {
                     field: "actions",
                     type: "actions",
-                    getActions: (params: GridRowParams) => [
-                      <GridActionsCellItem
-                        key={params.id.toString()}
-                        onClick={() => {
-                          setLoadingModal(true);
-                          setIsModalEditOpen(true);
+                    headerName: "Actions",
+                    width: 250,
+                    cellClassName: "actions",
+                    getActions: ({ id }) => {
+                      const isInEditMode =
+                        rowModesModel[id]?.mode === GridRowModes.Edit;
 
-                          editForm.setFieldsValue({
-                            packageName: params.row.packageName,
-                            point: params.row.costPoint,
-                            limit: params.row.limit,
-                            desc: params.row.packageDesc,
-                            packageId: params.id.toString(),
-                          });
-                          setLoadingModal(false);
-                        }}
-                        label="Edit"
-                        icon={<FaEdit />}
-                        showInMenu
-                      />,
-                      <GridActionsCellItem
-                        key={params.id.toString()}
-                        icon={<MdDisabledByDefault />}
-                        onClick={async () => {
-                          const disables = await disablePackages({
-                            updatedBy: session?.user?.name ?? undefined,
-                            packageId: params.id.toString(),
-                            disable: !params.row.inActive,
-                          });
+                      if (isInEditMode) {
+                        return [
+                          <GridActionsCellItem
+                            key={id.toString()}
+                            icon={<FaSave />}
+                            label="Save"
+                            sx={{
+                              color: "primary.main",
+                            }}
+                            onClick={handleSaveClick(id)}
+                          />,
+                          <GridActionsCellItem
+                            key={id.toString()}
+                            icon={<MdCancel />}
+                            label="Cancel"
+                            className="textPrimary"
+                            color="inherit"
+                            onClick={handleCancelClick(id)}
+                          />,
+                        ];
+                      }
 
-                          if (disables.success) {
-                            fetchListPackage({
-                              skip: Math.max(0, (currentPage - 1) * 100),
-                              take: 100,
-                            });
-                          } else {
-                            messageApi.open({
-                              type: "error",
-                              content: disables.error,
-                            });
-                          }
-                        }}
-                        label={`${params.row.inActive ? "Enable" : "Disable"}`}
-                        showInMenu
-                      />,
-                      <GridActionsCellItem
-                        key={params.id.toString()}
-                        icon={<FaTrash />}
-                        onClick={async () => {
-                          const deletes = await deletePackages({
-                            packageId: params.id.toString(),
-                          });
+                      return [
+                        <GridActionsCellItem
+                          key={id.toString()}
+                          icon={<FaEdit />}
+                          label="Edit"
+                          className="textPrimary"
+                          color="inherit"
+                          onClick={handleEditClick(id)}
+                        />,
+                        <GridActionsCellItem
+                          key={id.toString()}
+                          icon={<FaFileImage />}
+                          label="Edit Image"
+                          className="textPrimary"
+                          color="inherit"
+                          onClick={handleImageClick(id)}
+                        />,
 
-                          if (deletes.success) {
-                            fetchListPackage({
-                              skip: Math.max(0, (currentPage - 1) * 100),
-                              take: 100,
-                            });
-                          } else {
-                            messageApi.open({
-                              type: "error",
-                              content: deletes.error,
-                            });
-                          }
-                        }}
-                        label="Delete"
-                        showInMenu
-                      />,
-                    ],
+                        <GridActionsCellItem
+                          key={id.toString()}
+                          icon={<FaTrashCan />}
+                          label="Delete"
+                          className="textPrimary"
+                          color="inherit"
+                          onClick={handleDeleteClick(id)}
+                        />,
+                      ];
+                    },
                   },
                   {
                     field: "inActive",
-                    headerName: "disable",
+                    headerName: "inActive",
                     type: "boolean",
                     width: 120,
+                    editable: true,
                   },
                   {
                     field: "packageName",
                     headerName: "Nama Package",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
                     field: "packageDesc",
                     headerName: "Description",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
                     field: "costPoint",
                     headerName: "Cost Point",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
+                    type: "number",
                   },
                   {
                     field: "limit",
                     headerName: "Max Redeem",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    type: "number",
+                    editable: true,
                   },
                   {
                     field: "photo",
                     headerName: "Image",
+                    type: "actions",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
                     align: "center",
-                    renderCell: (params) => {
-                      return (
-                        <PhotoProvider>
-                          <PhotoView
-                            src={`${baseUrl}/api/package-redeem/image/${params.id.toString()}`}
-                          >
-                            <Button onClick={() => {}} type="link">
-                              Tampilkan Gambar
-                            </Button>
-                          </PhotoView>
-                        </PhotoProvider>
-                      );
-                    },
+                    getActions: ({ id }) => [
+                      <PhotoProvider key={id} className="text-xs">
+                        <PhotoView
+                          src={`${baseUrl}/api/package-redeem/image/${id.toString()}`}
+                        >
+                          <GridActionsCellItem
+                            icon={<MdPhoto />}
+                            label="Tampilkan Gambar"
+                            className="textPrimary"
+                            color="inherit"
+                          />
+                        </PhotoView>
+                      </PhotoProvider>,
+                    ],
                   },
                   {
                     field: "createdBy",
@@ -584,8 +687,6 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY"),
                   },
                   {
                     field: "updatedBy",
@@ -601,28 +702,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY"),
                   },
                 ]}
-              />
-            </div>
-
-            <div className="flex justify-center py-4">
-              <Pagination
-                count={totalPage}
-                page={currentPage}
-                onChange={async (
-                  event: React.ChangeEvent<unknown>,
-                  value: number
-                ) => {
-                  setCurrentPage(value);
-                  fetchListPackage({
-                    skip: Math.max(0, (value - 1) * 100),
-                    take: 100,
-                  });
-                }}
-                shape="rounded"
               />
             </div>
           </div>
@@ -630,181 +711,24 @@ export default function Home() {
       </Layout>
 
       <Modal
-        title="Edit Package"
-        open={isModalEditOpen}
-        onCancel={() => {
-          setIsModalEditOpen(false);
-        }}
+        title={"Edit Image"}
         footer={null}
-        destroyOnClose={true}
-        width={1000}
-        loading={loadingModal}
+        open={openImage}
+        onCancel={() => setOpenImage(false)}
+        destroyOnClose
       >
-        <Form
-          name="editPackage"
-          className="gap-10"
-          form={editForm}
-          onFinish={async (value) => {
-            try {
-              const base64 = value.addImg
-                ? value.addImg?.file?.status === "removed"
-                  ? undefined
-                  : ((await getBase64(value.addImg.file)) as string)
-                : undefined;
-
-              setLoading(true);
-
-              const updatePackages = await updatePackage({
-                packageId: value.packageId,
-                packageName: value.packageName,
-                costPoint: value.point,
-                limit: value.limit,
-                description: value.desc,
-                createdBy: session?.user?.name ?? "",
-                image: base64?.replace(/^data:image\/[a-z]+;base64,/, ""),
-              });
-
-              if (updatePackages.success) {
-                messageApi.open({
-                  type: "success",
-                  content: "Package redeem sudah diperbarui.",
-                });
-
-                editForm.resetFields();
-                fetchListPackage({
-                  skip: 0,
-                  take: 100,
-                });
-              } else {
-                messageApi.open({
-                  type: "error",
-                  content: updatePackages.error,
-                });
-              }
-              setLoading(false);
-              setIsModalEditOpen(false);
-            } catch (e: any) {
-              messageApi.open({
-                type: "error",
-                content: e.message,
-              });
-            }
-          }}
-          autoComplete="off"
-          labelCol={{ span: 24 }}
-          wrapperCol={{ span: 24 }}
-        >
-          <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-            <Form.Item name="packageId" hidden>
-              <Input />
-            </Form.Item>
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Package Name"
-                name="packageName"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your Campaign name!",
-                  },
-                  {
-                    max: 255,
-                    message: "Max length Campaign name!",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Point"
-                name="point"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your expired period!",
-                  },
-                ]}
-              >
-                <InputNumber addonAfter="Point" className="w-full" />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Description"
-                name="desc"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your description!",
-                  },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Limit"
-                name="limit"
-                rules={[
-                  {
-                    required: true,
-                    message: "Please input your limit!",
-                  },
-                ]}
-              >
-                <InputNumber addonAfter="Limit" className="w-full" />
-              </Form.Item>
-            </Col>
-
-            <Col className="gutter-row" xs={24} md={12} xl={8}>
-              <Form.Item
-                label="Upload Image"
-                name="addImg"
-                rules={[
-                  {
-                    validator: validateUploadEdit,
-                  },
-                ]}
-              >
-                <Upload
-                  listType="picture-card"
-                  multiple={false}
-                  accept=".jpeg,.jpg"
-                  beforeUpload={(file) => {
-                    validateFile(file).catch(() => false);
-                    return false;
-                  }}
-                  maxCount={1}
-                >
-                  <button
-                    style={{
-                      border: 0,
-                      background: "none",
-                    }}
-                    type="button"
-                  >
-                    <MdAddPhotoAlternate className="text-3xl" />
-                    <div style={{ marginTop: 8 }}>Upload</div>
-                  </button>
-                </Upload>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
-            <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
-              <Button loading={loading} type="primary" htmlType="submit" block>
-                Edit Package
-              </Button>
-            </ConfigProvider>
-          </Form.Item>
-        </Form>
+        <Dragger {...props}>
+          <p className="text-2xl text-center flex items-center justify-center">
+            <FaInbox />
+          </p>
+          <p className="ant-upload-text">
+            Click or drag file to this area to upload
+          </p>
+          <p className="ant-upload-hint">
+            Support for a single. Strictly prohibited from uploading company
+            data or other banned files.
+          </p>
+        </Dragger>
       </Modal>
     </Layout>
   );

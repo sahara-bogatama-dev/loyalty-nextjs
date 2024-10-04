@@ -272,6 +272,7 @@ export default function Home() {
                           type: "success",
                           content: "Akun sudah dibuat. Silahkan check email.",
                         });
+                        fetchUser();
                       } else {
                         messageApi.open({
                           type: "error",
