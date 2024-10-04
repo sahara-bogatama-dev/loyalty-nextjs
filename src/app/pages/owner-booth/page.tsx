@@ -15,15 +15,26 @@ import {
 } from "antd";
 import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
-import { dataMember, paginationOwner } from "@/controller/action";
 import HeaderBar from "@/app/component/header.comp";
-import { DataGrid, GridToolbarQuickFilter } from "@mui/x-data-grid";
-import { Pagination } from "@mui/material";
+import { Box, Pagination } from "@mui/material";
 import _ from "lodash";
 import moment from "moment";
 import "react-photo-view/dist/react-photo-view.css";
 
-import { DataGridPremium, GridToolbar } from "@mui/x-data-grid-premium";
+import {
+  DataGridPremium,
+  GridActionsCellItem,
+  GridRowParams,
+  GridToolbarColumnsButton,
+  GridToolbarContainer,
+  GridToolbarDensitySelector,
+  GridToolbarExport,
+  GridToolbarFilterButton,
+  GridToolbarQuickFilter,
+} from "@mui/x-data-grid-premium";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+import { MdPhoto } from "react-icons/md";
+import { listMember, listOwner } from "@/controller/booth/action";
 
 export default function Home() {
   const { Content } = Layout;
@@ -32,7 +43,7 @@ export default function Home() {
   const [baseUrl, setBaseUrl] = React.useState("");
 
   const [collapsed, setCollapsed] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
+  const [loadingTable, setLoadingTable] = React.useState(false);
   const [loadingModal, setLoadingModal] = React.useState(false);
 
   const {
@@ -42,34 +53,41 @@ export default function Home() {
   const [messageApi, contextHolder] = message.useMessage();
   const [boothList, setBoothList] = React.useState<any[]>([]);
   const [memberList, setMemberList] = React.useState<any[]>([]);
-  const [totalPage, setTotalPage] = React.useState<number>(0);
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [isModalMemberOpen, setIsModalMemberOpen] = React.useState(false);
-  const [totalMemberPage, setTotalMemberPage] = React.useState<number>(0);
-  const [currentMemberPage, setCurrentMemberPage] = React.useState<number>(1);
 
-  const fetchListOwner = React.useCallback(
-    async ({ take, skip }: { skip: number; take: number }) => {
-      const owners = await paginationOwner({ take, skip });
-      if (owners.success) {
-        console.log(owners.value.result);
-        setBoothList(owners.value.result as any);
-        setTotalPage(Math.ceil(owners.value.count / 100));
+  const fetchListOwner = React.useCallback(async () => {
+    setLoadingTable(true);
+    const owners = await listOwner();
+    if (owners.success) {
+      setBoothList(owners.value.result as any);
+    } else {
+      messageApi.open({
+        type: "error",
+        content: owners.error,
+      });
+    }
+    setLoadingTable(false);
+  }, [messageApi]);
+
+  const fetchListMember = React.useCallback(
+    async ({ boothId }: { boothId: string }) => {
+      setLoadingModal(true);
+      const member = await listMember({ boothId });
+      if (member.success) {
+        setMemberList(member.value.result as any);
       } else {
         messageApi.open({
           type: "error",
-          content: owners.error,
+          content: member.error,
         });
       }
+      setLoadingModal(false);
     },
     [messageApi]
   );
 
   React.useEffect(() => {
-    fetchListOwner({
-      skip: 0,
-      take: 100,
-    });
+    fetchListOwner();
 
     const { protocol, hostname, port } = window.location;
     setBaseUrl(`${protocol}//${hostname}${port ? `:${port}` : ""}`);
@@ -114,55 +132,57 @@ export default function Home() {
               <DataGridPremium
                 rows={boothList}
                 getRowId={(row) => row.boothId}
+                slots={{
+                  toolbar: () => (
+                    <GridToolbarContainer>
+                      <GridToolbarQuickFilter />
+                      <GridToolbarColumnsButton />
+                      <GridToolbarFilterButton />
+                      <GridToolbarDensitySelector
+                        slotProps={{ tooltip: { title: "Change density" } }}
+                      />
+                      <Box sx={{ flexGrow: 1 }} />
+                      <GridToolbarExport
+                        slotProps={{
+                          tooltip: { title: "Export data" },
+                          button: { variant: "outlined" },
+                        }}
+                      />
+                    </GridToolbarContainer>
+                  ),
+                }}
+                loading={loadingTable}
+                pageSizeOptions={[10, 100, 1000]}
+                pagination
                 disableRowSelectionOnClick
                 headerFilters
-                slots={{ toolbar: GridToolbar }}
-                slotProps={{
-                  toolbar: {
-                    showQuickFilter: true,
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 1000, page: 0 },
                   },
                 }}
-                autoPageSize
-                pagination
+                getRowHeight={() => "auto"}
+                rowSelection={false}
                 columns={[
                   {
-                    field: "_count",
-                    headerName: "Booth",
+                    field: "totalMember",
+                    headerName: "Total Member",
                     minWidth: 250,
                     headerAlign: "center",
                     editable: false,
-
-                    renderCell(params) {
-                      return (
-                        <Button
-                          onClick={async () => {
+                    type: "actions",
+                    getActions: ({ id, row }: GridRowParams) => {
+                      return [
+                        <a
+                          key={id.toString()}
+                          onClick={() => {
                             setIsModalMemberOpen(true);
-                            setLoadingModal(true);
-
-                            const fetchMember = await dataMember({
-                              take: 100,
-                              skip: 0,
-                            });
-
-                            if (fetchMember.success) {
-                              setMemberList(fetchMember.value.result as any);
-                              setTotalMemberPage(
-                                Math.ceil(fetchMember.value.count / 100)
-                              );
-                            } else {
-                              messageApi.open({
-                                type: "error",
-                                content: fetchMember.error,
-                              });
-                            }
-
-                            setLoadingModal(false);
+                            fetchListMember({ boothId: id.toString() });
                           }}
-                          type="link"
                         >
-                          Total Booth ({params.formattedValue.boothMember})
-                        </Button>
-                      );
+                          {row.totalMember}
+                        </a>,
+                      ];
                     },
                   },
                   {
@@ -180,14 +200,14 @@ export default function Home() {
                     editable: false,
                     renderCell(params) {
                       return (
-                        <Button
+                        <a
                           href={`https://www.google.com/maps?q=${params.row.geolocation}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           type="link"
                         >
                           {params.formattedValue}
-                        </Button>
+                        </a>
                       );
                     },
                   },
@@ -247,8 +267,6 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY HH:mm"),
                   },
                   {
                     field: "updatedBy",
@@ -264,28 +282,8 @@ export default function Home() {
                     minWidth: 250,
                     editable: false,
                     type: "dateTime",
-                    valueFormatter: (params) =>
-                      moment(params).format("DD/MM/YYYY HH:mm"),
                   },
                 ]}
-              />
-            </div>
-
-            <div className="flex justify-center py-4">
-              <Pagination
-                count={totalPage}
-                page={currentPage}
-                onChange={async (
-                  event: React.ChangeEvent<unknown>,
-                  value: number
-                ) => {
-                  setCurrentPage(value);
-                  fetchListOwner({
-                    skip: Math.max(0, (value - 1) * 100),
-                    take: 100,
-                  });
-                }}
-                shape="rounded"
               />
             </div>
           </div>
@@ -297,6 +295,7 @@ export default function Home() {
         open={isModalMemberOpen}
         onCancel={() => {
           setIsModalMemberOpen(false);
+          setMemberList([]);
         }}
         footer={null}
         destroyOnClose={true}
@@ -304,27 +303,66 @@ export default function Home() {
         loading={loadingModal}
       >
         <div style={{ height: 500, width: "100%", marginTop: 10 }}>
-          <DataGrid
-            getRowHeight={() => "auto"}
+          <DataGridPremium
             slots={{
               toolbar: () => (
-                <div className="flex items-center m-2 gap-2">
-                  <GridToolbarQuickFilter placeholder="Filter by data table" />
-
-                  <Button type="link" onClick={() => {}}>
-                    Export
-                  </Button>
-                </div>
+                <GridToolbarContainer>
+                  <GridToolbarQuickFilter />
+                  <GridToolbarColumnsButton />
+                  <GridToolbarFilterButton />
+                  <GridToolbarDensitySelector
+                    slotProps={{ tooltip: { title: "Change density" } }}
+                  />
+                  <Box sx={{ flexGrow: 1 }} />
+                  <GridToolbarExport
+                    slotProps={{
+                      tooltip: { title: "Export data" },
+                      button: { variant: "outlined" },
+                    }}
+                  />
+                </GridToolbarContainer>
               ),
             }}
-            pagination={true}
+            pageSizeOptions={[10, 100, 1000]}
+            pagination
+            disableRowSelectionOnClick
+            headerFilters
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 1000, page: 0 },
+              },
+            }}
+            getRowHeight={() => "auto"}
             rowSelection={false}
             rows={memberList}
             getRowId={(row) => row.boothMemberId}
             columns={[
               {
+                field: "photoBooth",
+                headerName: "Image",
+                type: "actions",
+                minWidth: 250,
+                headerAlign: "center",
+                editable: false,
+                align: "center",
+                getActions: ({ id }) => [
+                  <PhotoProvider key={id} className="text-xs">
+                    <PhotoView
+                      src={`${baseUrl}/api/booth/image/${id.toString()}`}
+                    >
+                      <GridActionsCellItem
+                        icon={<MdPhoto />}
+                        label="Tampilkan Gambar"
+                        className="textPrimary"
+                        color="inherit"
+                      />
+                    </PhotoView>
+                  </PhotoProvider>,
+                ],
+              },
+              {
                 field: "fullname",
-                headerName: "Owner Name",
+                headerName: "Member Name",
                 minWidth: 250,
                 headerAlign: "center",
                 editable: false,
@@ -337,14 +375,14 @@ export default function Home() {
                 editable: false,
                 renderCell(params) {
                   return (
-                    <Button
+                    <a
                       href={`https://www.google.com/maps?q=${params.row.geolocation}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       type="link"
                     >
                       {params.formattedValue}
-                    </Button>
+                    </a>
                   );
                 },
               },
@@ -363,34 +401,6 @@ export default function Home() {
                 editable: false,
               },
               {
-                field: "dateEstablishment",
-                headerName: "Sejak Tahun",
-                minWidth: 250,
-                headerAlign: "center",
-                editable: false,
-              },
-              {
-                field: "instagram",
-                headerName: "instagram",
-                minWidth: 250,
-                headerAlign: "center",
-                editable: false,
-              },
-              {
-                field: "facebook",
-                headerName: "facebook",
-                minWidth: 250,
-                headerAlign: "center",
-                editable: false,
-              },
-              {
-                field: "ecommerce",
-                headerName: "Ecommerce",
-                minWidth: 250,
-                headerAlign: "center",
-                editable: false,
-              },
-              {
                 field: "createdBy",
                 headerName: "Created By",
                 headerAlign: "center",
@@ -404,7 +414,6 @@ export default function Home() {
                 minWidth: 250,
                 editable: false,
                 type: "dateTime",
-                valueFormatter: (params) => moment(params).format("DD/MM/YYYY"),
               },
               {
                 field: "updatedBy",
@@ -420,27 +429,8 @@ export default function Home() {
                 minWidth: 250,
                 editable: false,
                 type: "dateTime",
-                valueFormatter: (params) => moment(params).format("DD/MM/YYYY"),
               },
             ]}
-          />
-        </div>
-
-        <div className="flex justify-center py-4">
-          <Pagination
-            count={totalPage}
-            page={currentPage}
-            onChange={async (
-              event: React.ChangeEvent<unknown>,
-              value: number
-            ) => {
-              setCurrentPage(value);
-              fetchListOwner({
-                skip: Math.max(0, (value - 1) * 100),
-                take: 100,
-              });
-            }}
-            shape="rounded"
           />
         </div>
       </Modal>

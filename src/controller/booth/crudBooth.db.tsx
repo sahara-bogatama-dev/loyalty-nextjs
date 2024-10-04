@@ -231,3 +231,19 @@ export async function updateBooth({
     throw new Error(`Error ${error.message}`);
   }
 }
+
+export async function boothMemberImage({
+  boothMemberId,
+}: {
+  boothMemberId: string;
+}) {
+  try {
+    const [result] = await prisma.$transaction([
+      prisma.booth.findUnique({ where: { boothMemberId } }),
+    ]);
+
+    return result;
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}

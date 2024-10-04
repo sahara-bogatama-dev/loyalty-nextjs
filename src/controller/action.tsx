@@ -15,7 +15,6 @@ import {
   searchPackage,
   updatePackageRedeem,
 } from "./redeemPackage/crudPackage.db";
-import { listMember, paginationListOwner } from "./booth/listBooth.db";
 
 //region action login
 const login = createServerAction(
@@ -166,33 +165,4 @@ export {
   searchPackages,
   updatePackage,
 };
-//endregion
-
-//region booth
-
-const paginationOwner = createServerAction(
-  async ({ take, skip }: { take: number; skip: number }) => {
-    try {
-      const data = await paginationListOwner({ take, skip });
-
-      return data;
-    } catch (error: any) {
-      throw new ServerActionError(error.message);
-    }
-  }
-);
-
-const dataMember = createServerAction(
-  async ({ take, skip }: { take: number; skip: number }) => {
-    try {
-      const data = await listMember({ take, skip });
-
-      return data;
-    } catch (error: any) {
-      throw new ServerActionError(error.message);
-    }
-  }
-);
-
-export { paginationOwner, dataMember };
 //endregion

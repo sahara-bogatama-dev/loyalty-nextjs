@@ -3,18 +3,10 @@ import _ from "lodash";
 
 const prisma = new PrismaClient();
 
-export async function paginationListOwner({
-  skip,
-  take,
-}: {
-  skip: number;
-  take: number;
-}) {
+export async function listDataOwner() {
   try {
-    const [result, count] = await prisma.$transaction([
+    const [result] = await prisma.$transaction([
       prisma.boothOwner.findMany({
-        skip,
-        take,
         orderBy: { createdAt: "asc" },
         include: {
           _count: {
@@ -22,33 +14,42 @@ export async function paginationListOwner({
           },
         },
       }),
-      prisma.boothOwner.count(),
     ]);
 
-    return { result, count };
+    const formattedResult = _.map(result, (owner) =>
+      _.assign(owner, { totalMember: _.get(owner, "_count.boothMember", 0) })
+    );
+
+    return { result: formattedResult };
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }
 }
 
-export async function listMember({
-  skip,
-  take,
-}: {
-  skip: number;
-  take: number;
-}) {
+export async function listDataMember({ boothId }: { boothId: string }) {
   try {
-    const [result, count] = await prisma.$transaction([
+    const [result] = await prisma.$transaction([
       prisma.booth.findMany({
-        skip,
-        take,
+        where: { boothId },
         orderBy: { createdAt: "asc" },
+        select: {
+          boothMemberId: true,
+          address: true,
+          geolocation: true,
+          email: true,
+          fullname: true,
+          phone: true,
+          userId: true,
+          boothId: true,
+          createdBy: true,
+          updatedBy: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       }),
-      prisma.boothOwner.count(),
     ]);
 
-    return { result, count };
+    return { result };
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }
