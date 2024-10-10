@@ -104,7 +104,7 @@ export default function SideBar({
             },
           },
           {
-            key: "MD-3",
+            key: "/pages/owner-booth",
             label: "Owner Booth",
             icon: <FaStore />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
@@ -156,7 +156,7 @@ export default function SideBar({
             },
           },
           {
-            key: "INV-2",
+            key: "/pages/labeling-box",
             label: "Labeling Box",
             icon: <FaBoxesPacking />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
