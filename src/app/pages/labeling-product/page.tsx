@@ -13,147 +13,93 @@ import {
   ConfigProvider,
   Row,
   Col,
-  InputNumber,
+  DatePicker,
   Select,
-  Upload,
-  UploadProps,
+  InputNumber,
+  Tag,
 } from "antd";
 import SideBar from "@/app/component/side.comp";
 import { useSession } from "next-auth/react";
-import {
-  addProducts,
-  allProductData,
-  listUnits,
-  uploadProduct,
-} from "@/controller/product/action";
 import HeaderBar from "@/app/component/header.comp";
+import _ from "lodash";
 import {
   DataGridPremium,
   GridToolbarContainer,
   GridToolbarColumnsButton,
   GridToolbarFilterButton,
   GridToolbarDensitySelector,
-  GridToolbarExport,
   GridToolbarQuickFilter,
+  GridRowSelectionModel,
+  useGridApiRef,
 } from "@mui/x-data-grid-premium";
-import { Box, Pagination } from "@mui/material";
-import _ from "lodash";
-import moment from "moment";
-import * as XLSX from "xlsx";
-import { UploadOutlined } from "@ant-design/icons";
+import {
+  createLabelingProduct,
+  listDataGetProduct,
+  listDataLabelingProduct,
+  printLabelingProduct,
+} from "@/controller/labelingProduct/action";
+import { Box } from "@mui/material";
+import dayjs from "dayjs";
 
 export default function Home() {
+  const apiRef = useGridApiRef();
   const { Content } = Layout;
   const [collapsed, setCollapsed] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [loadingTable, setLoadingTable] = React.useState(false);
+
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>([]);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const { data: session } = useSession();
   const [messageApi, contextHolder] = message.useMessage();
-  const [productList, setProductList] = React.useState<any[]>([]);
-  const [unit, setUnit] = React.useState<any[]>([]);
+  const [labelingProductList, setLabelingProductList] = React.useState<any[]>(
+    []
+  );
 
-  const fetchAllProduct = React.useCallback(async () => {
+  const [listProduct, setListProduct] = React.useState<
+    { id: string; productName: string }[]
+  >([]);
+
+  const [addForm] = Form.useForm();
+
+  const fetchLabelingProduct = React.useCallback(async () => {
     setLoadingTable(true);
-    const product = await allProductData();
+    const listData = await listDataLabelingProduct();
 
-    if (product.success) {
-      setProductList(product.value.serializedProducts as any);
+    if (listData.success) {
+      setLabelingProductList(listData.value);
     } else {
       messageApi.open({
         type: "error",
-        content: product.error,
+        content: listData.error,
       });
     }
     setLoadingTable(false);
   }, [messageApi]);
 
-  const fetchUnit = React.useCallback(async () => {
-    const units = await listUnits();
+  const fetchListProduct = React.useCallback(async () => {
+    setLoadingTable(true);
+    const listData = await listDataGetProduct();
 
-    if (units.success) {
-      setUnit(units.value);
+    if (listData.success) {
+      setListProduct(listData.value);
     } else {
       messageApi.open({
         type: "error",
-        content: units.error,
+        content: listData.error,
       });
     }
+    setLoadingTable(false);
   }, [messageApi]);
 
   React.useEffect(() => {
-    fetchUnit();
-
-    fetchAllProduct();
-  }, [fetchAllProduct, fetchUnit]);
-
-  const downloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([
-      {
-        productName: "Daging Burger Sapi1",
-        weight: Number("2.5"),
-        unit: "Pack",
-        productCode: "SB1",
-        expiredPeriod: 100,
-        basePoint: 100,
-      },
-    ] as any);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(
-      wb,
-      `Template Sahara Product ${moment().format("DD-MM-YYYY")}-${
-        Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
-      }.xlsx`
-    );
-  };
-
-  const handleFileChange: UploadProps["onChange"] = (info) => {
-    if (info.file.status === "done") {
-      const file = info.file.originFileObj;
-      if (file) {
-        setLoading(true);
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array" });
-
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const json = XLSX.utils.sheet_to_json(sheet);
-
-          const uploadProd = await uploadProduct({
-            data: _.map(json, (o: any) => ({
-              ...o,
-              expiredPeriod: moment().add(o.expiredPeriod, "days").toDate(),
-              createdBy: session?.user?.name,
-            })),
-          });
-
-          if (uploadProd.success) {
-            fetchAllProduct();
-          } else {
-            messageApi.open({
-              type: "error",
-              content: uploadProd.error,
-            });
-          }
-
-          setLoading(false);
-        };
-
-        reader.readAsArrayBuffer(file);
-      }
-    } else if (info.file.status === "error") {
-      messageApi.open({
-        type: "error",
-        content: `${info.file.name} file upload failed.`,
-      });
-    }
-  };
+    fetchLabelingProduct();
+    fetchListProduct();
+  }, [fetchLabelingProduct, fetchListProduct]);
 
   return (
     <Layout>
@@ -178,7 +124,10 @@ export default function Home() {
           <Breadcrumb
             items={[
               { title: "Main", href: "/" },
-              { title: "Product", href: "/pages/product" },
+              {
+                title: "List Labeling Product",
+                href: "/pages/labeling-product",
+              },
             ]}
             style={{ margin: "16px 0" }}
           />
@@ -191,39 +140,38 @@ export default function Home() {
             }}
           >
             <div className="flex justify-center">
-              <Card size="small" title="Tambah Product" bordered={true}>
+              <Card size="small" title="Buat Labeling Product" bordered={true}>
                 <Form
-                  name="addProduct"
+                  name="createProduct"
                   className="gap-10"
-                  initialValues={{}}
+                  form={addForm}
                   onFinish={async (value) => {
                     try {
                       setLoading(true);
+                      setLoadingTable(true);
 
-                      const addProd = await addProducts({
-                        productCode: value.productCode,
-                        productName: value.productName,
-                        weight: value.weight,
-                        basePoint: value.basePoint,
-                        unit: value.pack,
-                        expiredPeriod: value.expPeriod,
+                      const addLabeling = await createLabelingProduct({
+                        productId: value.selectProduct,
+                        qty: value.qtygenerate,
+                        shift: value.shift,
+                        batch: value.batch,
                         createdBy: session?.user?.name ?? "",
                       });
 
-                      if (addProd.success) {
-                        fetchAllProduct();
-                        messageApi.open({
-                          type: "success",
-                          content: "Product sudah di tambahkan.",
-                        });
+                      if (addLabeling.success) {
+                        fetchLabelingProduct();
+                        messageApi.success(
+                          "Berhasil generate labeling product."
+                        );
                       } else {
                         messageApi.open({
                           type: "error",
-                          content: addProd.success,
+                          content: addLabeling.error,
                         });
                       }
+
                       setLoading(false);
-                      fetchAllProduct();
+                      setLoadingTable(false);
                     } catch (e: any) {
                       messageApi.open({
                         type: "error",
@@ -238,95 +186,62 @@ export default function Home() {
                   <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
                     <Col className="gutter-row" xs={24} md={12} xl={8}>
                       <Form.Item
-                        label="Product Name"
-                        name="productName"
+                        label="Select Product"
+                        name="selectProduct"
                         rules={[
                           {
                             required: true,
-                            message: "Please input your product name!",
-                          },
-                          {
-                            max: 255,
-                            message: "Max length Product name!",
-                          },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </Col>
-                    <Col className="gutter-row" xs={24} md={12} xl={8}>
-                      <Form.Item
-                        label="Product Code"
-                        name="productCode"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Please input your product code!",
-                          },
-                        ]}
-                      >
-                        <Input />
-                      </Form.Item>
-                    </Col>
-                    <Col className="gutter-row" xs={24} md={12} xl={8}>
-                      <Form.Item
-                        label="Weight"
-                        name="weight"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Please input your weight!",
-                          },
-                        ]}
-                      >
-                        <InputNumber addonAfter="KG" className="w-full" />
-                      </Form.Item>
-                    </Col>
-
-                    <Col className="gutter-row" xs={24} md={12} xl={8}>
-                      <Form.Item
-                        label="Pack"
-                        name="pack"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Please input your pack!",
+                            message: "Please input your product!",
                           },
                         ]}
                       >
                         <Select
-                          options={_.map(unit, (o) => ({
-                            value: o.value,
-                            label: <span>{o.label}</span>,
+                          allowClear
+                          options={_.map(listProduct, (o) => ({
+                            value: o.id,
+                            label: <span>{o.productName}</span>,
                           }))}
                           virtual={false}
                         />
                       </Form.Item>
                     </Col>
-
                     <Col className="gutter-row" xs={24} md={12} xl={8}>
                       <Form.Item
-                        label="Expired Period"
-                        name="expPeriod"
+                        label="shift"
+                        name="shift"
                         rules={[
                           {
                             required: true,
-                            message: "Please input your expired period!",
+                            message: "Please input your shift!",
                           },
                         ]}
                       >
-                        <InputNumber addonAfter="Hari" className="w-full" />
+                        <InputNumber className="w-full" />
+                      </Form.Item>
+                    </Col>
+                    <Col className="gutter-row" xs={24} md={12} xl={8}>
+                      <Form.Item
+                        label="batch"
+                        name="batch"
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please input your Batch!",
+                          },
+                        ]}
+                      >
+                        <InputNumber className="w-full" />
                       </Form.Item>
                     </Col>
 
                     <Col className="gutter-row" xs={24} md={12} xl={8}>
                       <Form.Item
-                        label="Base Point"
-                        name="basePoint"
+                        label="Qty"
+                        name="qtygenerate"
                         rules={[
                           {
                             required: true,
-                            message: "Please input your base point!",
+                            message: "Please input your Qty Generate!",
                           },
                         ]}
                       >
@@ -343,7 +258,7 @@ export default function Home() {
                         htmlType="submit"
                         block
                       >
-                        Add Product
+                        Generate
                       </Button>
                     </ConfigProvider>
                   </Form.Item>
@@ -353,10 +268,10 @@ export default function Home() {
 
             <div style={{ height: 500, width: "100%", marginTop: 10 }}>
               <DataGridPremium
+                apiRef={apiRef}
                 loading={loadingTable}
                 pageSizeOptions={[10, 100, 1000]}
-                rows={productList}
-                getRowId={(row) => row.productId}
+                rows={labelingProductList}
                 disableRowSelectionOnClick
                 headerFilters
                 initialState={{
@@ -373,84 +288,121 @@ export default function Home() {
                       <GridToolbarDensitySelector
                         slotProps={{ tooltip: { title: "Change density" } }}
                       />
+
                       <Box sx={{ flexGrow: 1 }} />
-                      <GridToolbarExport
-                        slotProps={{
-                          tooltip: { title: "Export data" },
-                          button: { variant: "outlined" },
-                        }}
-                      />
-                      <Upload
-                        accept=".xlsx"
-                        showUploadList={false}
-                        onChange={handleFileChange}
-                        maxCount={1}
-                        multiple={false}
-                      >
-                        <Button icon={<UploadOutlined />} loading={loading}>
-                          Upload
-                        </Button>
-                      </Upload>
                       <Button
-                        onClick={() => {
-                          downloadTemplate();
+                        onClick={async () => {
+                          if (_.isEmpty(rowSelectionModel)) {
+                            messageApi.error("Pilih product terlebih dahulu.");
+                          } else {
+                            setLoading(true);
+                            const printered = await printLabelingProduct({
+                              labelingProductId: rowSelectionModel as any,
+                              updatedBy: session?.user?.name ?? "",
+                            });
+
+                            if (printered.success) {
+                              setLabelingProductList((prevRows) =>
+                                prevRows.map((row) =>
+                                  rowSelectionModel.includes(
+                                    row.labelingProductId
+                                  )
+                                    ? {
+                                        ...row,
+                                        statusColor: "green",
+                                        status: "Printed",
+                                        updatedAt: dayjs().toDate(),
+                                        updatedBy: session?.user?.name ?? "",
+                                      }
+                                    : row
+                                )
+                              );
+
+                              const selectedRowIds = Array.from(
+                                apiRef.current.getSelectedRows().keys()
+                              );
+
+                              if (selectedRowIds.length > 0) {
+                                apiRef.current.exportDataAsExcel({
+                                  getRowsToExport: () => selectedRowIds,
+                                });
+                              } else {
+                                message.error("No rows selected.");
+                              }
+                            } else {
+                              messageApi.error(printered.error);
+                            }
+                            setLoading(false);
+                          }
                         }}
                         loading={loading}
                       >
-                        Template
+                        Printed
                       </Button>
                     </GridToolbarContainer>
                   ),
                 }}
+                checkboxSelection
+                onRowSelectionModelChange={(newSelection) => {
+                  setRowSelectionModel(newSelection);
+                }}
+                rowSelection
                 pagination
                 disableColumnResize={false}
+                getRowId={(row) => row.labelingProductId}
                 columns={[
                   {
-                    field: "basePoint",
-                    headerName: "Base Point",
-                    minWidth: 250,
+                    field: "status",
+                    headerName: "Status",
+                    width: 250,
+                    editable: true,
                     headerAlign: "center",
-                    editable: false,
+                    align: "center",
+                    renderCell(params) {
+                      return (
+                        <Tag
+                          key={1}
+                          color={params.row.statusColor}
+                          className="my-1"
+                        >
+                          {params.row.status}
+                        </Tag>
+                      );
+                    },
                   },
                   {
-                    field: "productCode",
-                    headerName: "Product Code",
-                    minWidth: 250,
-                    headerAlign: "center",
-                    editable: false,
+                    field: "codeLabel",
+                    headerName: "Labeling product",
+                    width: 250,
+                    editable: true,
                   },
                   {
                     field: "productName",
-                    headerName: "Product Name",
+                    headerName: "Nama Product",
                     minWidth: 250,
-                    align: "left",
+                    headerAlign: "center",
+                    editable: true,
+                  },
+                  {
+                    field: "productCode",
+                    headerName: "Kode Product",
+                    minWidth: 250,
                     headerAlign: "center",
                     editable: false,
                   },
                   {
-                    field: "weight",
-                    headerName: "Weight (Kg)",
+                    field: "shift",
+                    headerName: "Shift",
                     minWidth: 250,
                     headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
-                    field: "unit",
-                    headerName: "Unit",
+                    field: "batch",
+                    headerName: "Batch",
                     minWidth: 250,
-
                     headerAlign: "center",
-                    editable: false,
-                  },
-                  {
-                    field: "expiredPeriod",
-                    headerName: "Expired Period",
-                    minWidth: 250,
-                    type: "dateTime",
-                    valueFormatter: (params: any) =>
-                      moment(params).format("DD/MM/YYYY"),
-                    headerAlign: "center",
-                    editable: false,
+                    editable: true,
                   },
                   {
                     field: "createdBy",

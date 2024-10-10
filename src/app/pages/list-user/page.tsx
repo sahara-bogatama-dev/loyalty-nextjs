@@ -83,7 +83,6 @@ export default function Home() {
     const user = await allUserData();
 
     if (user.success) {
-      console.log(user.value.result);
       setUserList(user.value.result as any);
     } else {
       messageApi.open({
@@ -647,6 +646,7 @@ export default function Home() {
                   value: o.id,
                   label: <span>{o.name}</span>,
                 }))}
+                virtual={false}
               />
             </Form.Item>
 

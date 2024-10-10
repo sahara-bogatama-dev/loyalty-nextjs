@@ -505,6 +505,7 @@ export default function Home() {
                             value: o.value,
                             label: <span>{o.label}</span>,
                           }))}
+                          virtual={false}
                         />
                       </Form.Item>
                     </Col>
@@ -625,7 +626,6 @@ export default function Home() {
                     paginationModel: { pageSize: 1000, page: 0 },
                   },
                 }}
-                getRowHeight={() => "auto"}
                 rowSelection={false}
                 rows={campaignList}
                 getRowId={(row) => row.campaignId}
@@ -893,6 +893,7 @@ export default function Home() {
                       value: o.value,
                       label: <span>{o.label}</span>,
                     }))}
+                    virtual={false}
                   />
                 </Form.Item>
 

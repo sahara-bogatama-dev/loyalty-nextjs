@@ -426,7 +426,6 @@ export default function Home() {
                     paginationModel: { pageSize: 1000, page: 0 },
                   },
                 }}
-                getRowHeight={() => "auto"}
                 rowSelection={false}
                 rows={agentList}
                 getRowId={(row) => row.agentId}

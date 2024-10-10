@@ -147,7 +147,7 @@ export default function SideBar({
         role: ["cm0r2rm2w00000cl8as2u68th"],
         children: [
           {
-            key: "INV-1",
+            key: "/pages/labeling-product",
             label: "Labeling",
             icon: <FaBarcode />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
@@ -177,7 +177,7 @@ export default function SideBar({
       },
       {
         key: "sub4",
-        label: "DITRIBUTION",
+        label: "DISTRIBUTION",
         role: ["cm0r2rm2w00000cl8as2u68th"],
         children: [
           {

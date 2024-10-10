@@ -161,7 +161,6 @@ export default function Home() {
                     paginationModel: { pageSize: 1000, page: 0 },
                   },
                 }}
-                getRowHeight={() => "auto"}
                 rowSelection={false}
                 columns={[
                   {
@@ -332,7 +331,6 @@ export default function Home() {
                 paginationModel: { pageSize: 1000, page: 0 },
               },
             }}
-            getRowHeight={() => "auto"}
             rowSelection={false}
             rows={memberList}
             getRowId={(row) => row.boothMemberId}

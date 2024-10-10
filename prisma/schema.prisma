@@ -238,3 +238,52 @@ model Booth {
   @@index([boothId])
   @@index([boothMemberId])
 }
+
+
+model LabelingProduct {
+  labelingProductId      String        @id @default(cuid())
+  productId           String        @db.VarChar(255)
+  productCode         String        @db.VarChar(255)
+  productName         String        @db.VarChar(255)
+  codeLabel           String        @unique() @db.VarChar(255)
+  bestBefore          DateTime
+  shift               Int
+  batch               String        @db.VarChar(255)
+  status              Int           @default(0)
+  labelingBoxId       String?       @db.VarChar(255)
+  labelingBox         LabelingBox?     @relation(fields: [labelingBoxId], references: [labelingBoxId], onDelete: SetNull)
+  createdBy           String            @default("bySystem") @db.VarChar(255)
+  updatedBy           String            @default("bySystem") @db.VarChar(255)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([labelingProductId])
+  @@index([labelingBoxId])
+  @@index([productId])
+}
+
+model LabelingBox {
+  labelingBoxId        String              @id @default(cuid())
+  codeBox           String              @unique @db.VarChar(255)
+  leader            String              @db.VarChar(255)
+  status            Int                 @default(0)
+  labelingProduct   LabelingProduct[]
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([labelingBoxId])
+}
+
+model runningNumber {
+  id   String   @id @default(cuid())
+  objectName String?  @db.VarChar(255)
+  value      Int? 
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([id])
+}
