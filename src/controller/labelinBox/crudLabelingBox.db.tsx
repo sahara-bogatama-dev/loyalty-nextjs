@@ -41,7 +41,16 @@ export async function printedBox({
         where: { labelingBoxId: { in: labelingBoxId } },
         data: { status: 1, updatedBy },
       });
-      return productList;
+
+      const updateStock = await tx.stokopname.updateMany({
+        where: { labelingBoxId: { in: labelingBoxId } },
+        data: {
+          status: 4,
+          updatedBy,
+        },
+      });
+
+      return { productList, updateStock };
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
@@ -79,7 +88,17 @@ export async function addLabelingBox({
           },
         });
 
-        return { updateProduct };
+        const updateStock = await tx.stokopname.updateMany({
+          where: { labelingProductId: { in: labelingProductId } },
+          data: {
+            labelingBoxId: insertLabelBox.labelingBoxId,
+            labelingBox: insertLabelBox.codeBox,
+            status: 3,
+            updatedBy: createdBy,
+          },
+        });
+
+        return { updateProduct, updateStock };
       } else {
         throw new Error("Gagal generate box labeling");
       }

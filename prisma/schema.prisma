@@ -143,6 +143,8 @@ model Product {
   updatedAt     DateTime          @updatedAt
 
   campaign      Campaign?     @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
+  
+  stokopname Stokopname[]
 
    @@index([campaignId])
 }
@@ -257,6 +259,8 @@ model LabelingProduct {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
+  stokopname Stokopname[]
+
   @@index([labelingProductId])
   @@index([labelingBoxId])
   @@index([productId])
@@ -273,6 +277,81 @@ model LabelingBox {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
+  stokopname Stokopname[]
+  deliveryOrderProduct DeliveryOrderProduct[]
+
+  @@index([labelingBoxId])
+}
+
+
+model Stokopname {
+  stokopnameId       String        @id @default(cuid())
+  productId     String        @db.VarChar(255)
+  productName   String        @db.VarChar(255)
+  productCode   String        @db.VarChar(255)
+  weight        Decimal
+  unit          String        @db.VarChar(255)
+  expiredDate   DateTime
+  labelingProduct String        @unique @db.VarChar(255)
+  labelingProductId       String        @db.VarChar(255)
+  labelingBox   String?       @db.VarChar(255)
+  labelingBoxId String?       @db.VarChar(255)
+  status        Int           @default(2)
+  location      String?       @db.VarChar(5)
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  labelingBoxs      LabelingBox?     @relation(fields: [labelingBoxId], references: [labelingBoxId], onDelete: Restrict)
+  labelingProducts  LabelingProduct? @relation(fields: [labelingProductId], references: [labelingProductId], onDelete: Restrict)
+  product       Product?      @relation(fields: [productId], references: [productId], onDelete: Restrict)
+
+  @@index([stokopnameId])
+  @@index([labelingBoxId])
+  @@index([productId])
+  @@index([labelingProductId])
+}
+
+model DeliveryOrder {
+  deliveryOrderId      String              @id @default(cuid()) @db.VarChar(255)
+  noSurat           String              @db.VarChar(255)
+  orderNo           String              @db.VarChar(255)
+  shippingDate      DateTime
+  agentId           String              @db.VarChar(255)
+  customerName      String              @db.VarChar(255)
+  deliveryAddress   String              @db.VarChar(500)
+  totalWeight       Int
+  deliveryNote      String?             @db.VarChar(255)
+  status            Int
+  receiveDate       DateTime?
+  receiveBy         String?             @db.VarChar(255)
+  receiveNote       String?             @db.VarChar(255)
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deliveryOrderProduct DeliveryOrderProduct[]
+
+  @@index([deliveryOrderId])
+}
+
+model DeliveryOrderProduct {
+  deliveryOrderProductId String      @id @default(cuid()) @db.VarChar(255)
+  deliveryOrderId         String      @db.VarChar(255)
+  shipQty             Int
+  labelingBox   String?       @db.VarChar(255)
+  labelingBoxId String?       @db.VarChar(255)
+  recaivedQty         Int?
+  statusProduct       Int?
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  deliveryOrder      DeliveryOrder? @relation(fields: [deliveryOrderId], references: [deliveryOrderId], onDelete: Restrict)
+  boxs                LabelingBox?   @relation(fields: [labelingBoxId], references: [labelingBoxId], onDelete: Restrict)
+
+  @@index([deliveryOrderProductId])
+  @@index([deliveryOrderId])
   @@index([labelingBoxId])
 }
 

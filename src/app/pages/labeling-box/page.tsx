@@ -241,6 +241,7 @@ export default function Home() {
                           )
                         );
                         setRowSelectionModel([]);
+                        fetchLabelingBox();
                         messageApi.success("Generate labeling box berhasil");
                       } else {
                         messageApi.error(genBox.error);

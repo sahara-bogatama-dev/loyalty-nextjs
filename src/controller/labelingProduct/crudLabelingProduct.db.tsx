@@ -43,7 +43,16 @@ export async function printedProduct({
         where: { labelingProductId: { in: labelingProductId } },
         data: { status: 1, updatedBy },
       });
-      return productList;
+
+      const updateStock = await tx.stokopname.updateMany({
+        where: { labelingProductId: { in: labelingProductId } },
+        data: {
+          status: 2,
+          updatedBy,
+        },
+      });
+
+      return { productList, updateStock };
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
@@ -84,8 +93,6 @@ export async function addLabelingProduct({
         });
 
         if (manyProduct) {
-          const duplicateCount = manyLabeling.length - manyProduct.count;
-
           const productids = _.map(manyLabeling, "productId");
           const labelCodeIds = _.map(manyLabeling, "codeLabel");
 
@@ -98,6 +105,28 @@ export async function addLabelingProduct({
           });
 
           if (findProduct && findLabelProduct) {
+            const mapLabeling = _.map(findLabelProduct, (o) => {
+              const product = _.find(findProduct, { productId: o.productId });
+
+              return {
+                productId: o.productId,
+                productName: o.productName,
+                productCode: o.productCode,
+                weight: product ? product.weight ?? 0 : 0,
+                unit: product ? product.unit ?? "" : "",
+                expiredDate: o.bestBefore,
+                labelingProduct: o.codeLabel,
+                labelingProductId: o.labelingProductId,
+                createdBy,
+                status: 0,
+              };
+            });
+            const addStock = await tx.stokopname.createMany({
+              data: mapLabeling,
+              skipDuplicates: true,
+            });
+
+            return { addStock };
           } else {
             throw new Error("Gagal menambahkan ke stock!");
           }
