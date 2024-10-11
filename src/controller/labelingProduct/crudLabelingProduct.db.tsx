@@ -118,7 +118,7 @@ export async function addLabelingProduct({
                 labelingProduct: o.codeLabel,
                 labelingProductId: o.labelingProductId,
                 createdBy,
-                status: 0,
+                status: 5,
               };
             });
             const addStock = await tx.stokopname.createMany({

@@ -165,12 +165,12 @@ export default function SideBar({
             },
           },
           {
-            key: "INV-3",
+            key: "/pages/stock",
             label: "Stock",
             icon: <FaWarehouse />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
             onClick: () => {
-              route.push("/pages/stock-product");
+              route.push("/pages/stock");
             },
           },
         ],
