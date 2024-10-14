@@ -15,13 +15,16 @@ export async function listStockopname() {
       });
 
       const colorMap = {
-        2: "magenta", // Printed - Labeling Product
-        3: "red", // Unprinted - Labeling Box
-        4: "volcano", // Printed - Labeling Box
-        5: "orange", // Unprinted - Labeling Product
-        6: "gold", // InStock
-        7: "lime", // On Delivery
-        8: "green", // Sold
+        2: "magenta",
+        3: "red",
+        4: "volcano",
+        5: "orange",
+        6: "gold",
+        7: "lime",
+        8: "saddlebrown",
+        9: "royalblue",
+        10: "lavender",
+        11: "green",
       } as any;
 
       return data.map((item) => {

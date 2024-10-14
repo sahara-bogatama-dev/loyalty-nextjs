@@ -159,6 +159,7 @@ export default function Home() {
                               : row
                           )
                         );
+                        addForm.resetFields();
                       } else {
                         messageApi.error(addLocation.error);
                       }

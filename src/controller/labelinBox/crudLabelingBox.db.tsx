@@ -64,43 +64,47 @@ export async function addLabelingBox({
 }: BoxLabel) {
   try {
     return prisma.$transaction(async (tx) => {
-      const countBox = await tx.labelingBox.count();
-      const newCount = countBox + 1;
-
-      const insertLabelBox = await tx.labelingBox.create({
-        data: {
-          codeBox: `PSBI${String(
-            dayjs().diff(dayjs("1899-12-30", "YYYY-MM-DD"), "day")
-          )}${_.toUpper(
-            _.map(leader.split(" "), (word) => word[0]).join("")
-          )}${dayjs().format("MM")}${newCount}`,
-          createdBy,
-          leader,
-        },
-      });
-
-      if (insertLabelBox) {
-        const updateProduct = await tx.labelingProduct.updateMany({
-          where: { labelingProductId: { in: labelingProductId } },
-          data: {
-            labelingBoxId: insertLabelBox.labelingBoxId,
-            updatedBy: createdBy,
-          },
-        });
-
-        const updateStock = await tx.stokopname.updateMany({
-          where: { labelingProductId: { in: labelingProductId } },
-          data: {
-            labelingBoxId: insertLabelBox.labelingBoxId,
-            labelingBox: insertLabelBox.codeBox,
-            status: 3,
-            updatedBy: createdBy,
-          },
-        });
-
-        return { updateProduct, updateStock };
+      if (_.isEmpty(labelingProductId)) {
+        throw new Error("Pilih dulu item labeling product");
       } else {
-        throw new Error("Gagal generate box labeling");
+        const countBox = await tx.labelingBox.count();
+        const newCount = countBox + 1;
+
+        const insertLabelBox = await tx.labelingBox.create({
+          data: {
+            codeBox: `PSBI${String(
+              dayjs().diff(dayjs("1899-12-30", "YYYY-MM-DD"), "day")
+            )}${_.toUpper(
+              _.map(leader.split(" "), (word) => word[0]).join("")
+            )}${dayjs().format("MM")}${newCount}`,
+            createdBy,
+            leader,
+          },
+        });
+
+        if (insertLabelBox) {
+          const updateProduct = await tx.labelingProduct.updateMany({
+            where: { labelingProductId: { in: labelingProductId } },
+            data: {
+              labelingBoxId: insertLabelBox.labelingBoxId,
+              updatedBy: createdBy,
+            },
+          });
+
+          const updateStock = await tx.stokopname.updateMany({
+            where: { labelingProductId: { in: labelingProductId } },
+            data: {
+              labelingBoxId: insertLabelBox.labelingBoxId,
+              labelingBox: insertLabelBox.codeBox,
+              status: 3,
+              updatedBy: createdBy,
+            },
+          });
+
+          return { updateProduct, updateStock };
+        } else {
+          throw new Error("Gagal generate box labeling");
+        }
       }
     });
   } catch (error: any) {
