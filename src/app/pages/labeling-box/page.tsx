@@ -288,7 +288,7 @@ export default function Home() {
                       columns={[
                         {
                           field: "codeLabel",
-                          headerName: "labling product",
+                          headerName: "Labeling Product",
                           width: 500,
                           editable: true,
                         },
