@@ -181,7 +181,7 @@ export default function SideBar({
         role: ["cm0r2rm2w00000cl8as2u68th"],
         children: [
           {
-            key: "DIT-1",
+            key: "/pages/delivery-order",
             label: "Delivery Order",
             icon: <MdDeliveryDining />,
             role: ["cm0r2rm2w00000cl8as2u68th"],

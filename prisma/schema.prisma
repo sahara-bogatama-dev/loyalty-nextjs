@@ -107,7 +107,6 @@ model Role {
   userId  String 
   name    String  @unique
   user    User   @relation(fields: [userId], references: [id])
- 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy String   @default("bySystem") @db.VarChar(255)
@@ -320,7 +319,7 @@ model DeliveryOrder {
   agentId           String              @db.VarChar(255)
   customerName      String              @db.VarChar(255)
   deliveryAddress   String              @db.VarChar(500)
-  totalWeight       Int
+  totalWeight       Decimal
   deliveryNote      String?             @db.VarChar(255)
   status            Int
   receiveDate       DateTime?
@@ -341,8 +340,10 @@ model DeliveryOrderProduct {
   shipQty             Int
   labelingBox   String?       @db.VarChar(255)
   labelingBoxId String?       @db.VarChar(255)
-  recaivedQty         Int?
-  statusProduct       Int?
+  productName   String     
+  unit  String   
+  receivedQty         Int?
+  statusProduct       Int
   createdBy         String              @default("bySystem") @db.VarChar(255)
   updatedBy         String              @default("bySystem") @db.VarChar(255)
   createdAt         DateTime            @default(now())
