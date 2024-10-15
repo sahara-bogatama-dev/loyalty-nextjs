@@ -42,15 +42,7 @@ import {
 import { MdCancel, MdCallReceived, MdPrint } from "react-icons/md";
 import { FaBoxOpen } from "react-icons/fa";
 import { RiMailSendFill } from "react-icons/ri";
-import {
-  Page,
-  Text,
-  View,
-  Image,
-  Document,
-  StyleSheet,
-  pdf,
-} from "@react-pdf/renderer";
+import { pdf } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { TemplateDR } from "@/app/component/templateDR.comp";
 import dayjs from "dayjs";
@@ -427,7 +419,6 @@ export default function Home() {
                     field: "receiveBy",
                     headerName: "Receive By",
                     width: 250,
-                    type: "date",
                     editable: false,
                   },
                   {
@@ -442,7 +433,7 @@ export default function Home() {
                     headerAlign: "center",
                     minWidth: 250,
                     editable: false,
-                    type: "dateTime",
+                    type: "date",
                   },
                   {
                     field: "createdBy",
