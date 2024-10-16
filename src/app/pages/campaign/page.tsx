@@ -623,7 +623,7 @@ export default function Home() {
                 headerFilters
                 initialState={{
                   pagination: {
-                    paginationModel: { pageSize: 1000, page: 0 },
+                    paginationModel: { pageSize: 100, page: 0 },
                   },
                 }}
                 rowSelection={false}

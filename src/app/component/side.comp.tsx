@@ -197,12 +197,12 @@ export default function SideBar({
         role: ["cm0r2rm2w00000cl8as2u68th"],
         children: [
           {
-            key: "LY-1",
+            key: "/pages/point",
             label: "Point",
             icon: <FaCoins />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
             onClick: () => {
-              route.push("/pages/point");
+              route.push("ss/pages/point");
             },
           },
           {

@@ -17,7 +17,7 @@
     "@mui/x-data-grid": "^7.16.0",
     "@mui/x-data-grid-premium": "^7.18.0",
     "@mui/x-license": "^7.18.0",
-    "@prisma/client": "^5.19.0",
+    "@prisma/client": "^5.21.0",
     "@react-pdf/renderer": "^3.3.8",
     "antd": "^5.20.3",
     "antd-mask-input": "^2.0.7",

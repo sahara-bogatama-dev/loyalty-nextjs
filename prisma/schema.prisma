@@ -38,6 +38,7 @@ model User {
   updatedBy String   @default("bySystem") @db.VarChar(255)
 
   role Role[]
+  pointLoyaalty PointLoyalty[]
 }
  
 model Account {
@@ -366,4 +367,43 @@ model runningNumber {
   updatedAt         DateTime            @updatedAt
 
   @@index([id])
+}
+
+model PointLoyalty {
+  pointId      String            @id @default(cuid()) @db.VarChar(255)
+  userId       String            @db.VarChar(255)
+  point         Int               @default(0)
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  log          PointReceiveLog[]
+  userIdData   User?             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([pointId])
+}
+
+model PointReceiveLog {
+  pointLogId    String        @id @default(cuid()) @db.VarChar(255)
+  pointId       String        @db.VarChar(255)
+  userId        String        @db.VarChar(255)
+  point         Int
+  remark        String?       @db.VarChar(500)
+  productId     String?       @db.VarChar(255)
+  productCode   String?       @db.VarChar(255)
+  productName   String?       @db.VarChar(255)
+  labelingProductId       String?       @db.VarChar(255)
+  labelingProducts String?       @db.VarChar(255)
+  scanDate      DateTime?
+  campaignId    String?       @db.VarChar(255)
+  status       Int
+  createdAt     DateTime      @default(now())
+  modifedAt     DateTime      @updatedAt
+  modifiedBy    String?       @db.VarChar(255)
+  createdBy     String        @default("bySystem") @db.VarChar(255)
+  pointLoyalty       PointLoyalty? @relation(fields: [pointId], references: [pointId], onDelete: Restrict)
+
+  @@index([pointLogId])
+  @@index([pointId])
 }
