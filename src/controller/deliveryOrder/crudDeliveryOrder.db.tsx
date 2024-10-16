@@ -127,9 +127,18 @@ export async function submitDR({ deliveryOrderId, updatedBy }: DeliveryOrder) {
           (o) => o.deliveryOrderProductId
         );
 
+        const labelBoxId = _.compact(
+          _.map(data.deliveryOrderProduct, "labelingBoxId")
+        );
+
         await tx.deliveryOrderProduct.updateMany({
           where: { deliveryOrderProductId: { in: productOrderIds } },
           data: { statusProduct: 8, updatedBy },
+        });
+
+        await tx.stokopname.updateMany({
+          where: { labelingBoxId: { in: labelBoxId } },
+          data: { status: 11, updatedBy },
         });
 
         return data;
