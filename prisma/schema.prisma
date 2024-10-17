@@ -398,12 +398,31 @@ model PointReceiveLog {
   scanDate      DateTime?
   campaignId    String?       @db.VarChar(255)
   status       Int
-  createdAt     DateTime      @default(now())
-  modifedAt     DateTime      @updatedAt
-  modifiedBy    String?       @db.VarChar(255)
-  createdBy     String        @default("bySystem") @db.VarChar(255)
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
   pointLoyalty       PointLoyalty? @relation(fields: [pointId], references: [pointId], onDelete: Restrict)
 
   @@index([pointLogId])
   @@index([pointId])
+}
+
+model Redeem {
+  redeemId     String   @id @default(uuid()) @db.VarChar(255)
+  userId      String?  @db.VarChar(255)
+  agentId     String?  @db.VarChar(255)
+  fullname     String?  @db.VarChar(255)
+  phone        String?  @db.VarChar(255)
+  email        String?  @db.VarChar(255)
+  packageId   String   @db.VarChar(255)
+  packageName String?  @db.VarChar(255)
+  redeemCode   String?  @db.VarChar(255)
+  status      Int
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([packageId])
 }
