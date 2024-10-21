@@ -202,7 +202,7 @@ export default function SideBar({
             icon: <FaCoins />,
             role: ["cm0r2rm2w00000cl8as2u68th"],
             onClick: () => {
-              route.push("ss/pages/point");
+              route.push("/pages/point");
             },
           },
           {
