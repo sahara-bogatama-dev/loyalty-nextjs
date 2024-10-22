@@ -357,7 +357,7 @@ model DeliveryOrderProduct {
   @@index([labelingBoxId])
 }
 
-model runningNumber {
+model RunningNumber {
   id   String   @id @default(cuid())
   objectName String?  @db.VarChar(255)
   value      Int? 
@@ -368,6 +368,19 @@ model runningNumber {
 
   @@index([id])
 }
+
+model VersionMobile {
+  id   String   @id @default(cuid())
+  version String?  @db.VarChar(255)
+  maintenance      Boolean @default(false) 
+  createdBy         String              @default("bySystem") @db.VarChar(255)
+  updatedBy         String              @default("bySystem") @db.VarChar(255)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([id])
+}
+
 
 model PointLoyalty {
   pointId      String            @id @default(cuid()) @db.VarChar(255)

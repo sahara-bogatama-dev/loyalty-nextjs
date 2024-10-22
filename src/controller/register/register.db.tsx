@@ -11,6 +11,8 @@ interface CreeteUser {
   leader?: string;
   fullname: string;
   createdBy?: string;
+  mobile?: boolean;
+  idRole?: string;
 }
 
 export function createUser({
@@ -21,6 +23,8 @@ export function createUser({
   leader,
   fullname,
   createdBy,
+  mobile,
+  idRole,
 }: CreeteUser) {
   try {
     return prisma.$transaction(async (tx) => {
@@ -41,20 +45,35 @@ export function createUser({
       const salt = bcrypt.genSaltSync(10);
       const hash = bcrypt.hashSync(password, salt);
 
-      const userCreate = await tx.user.create({
-        data: {
-          email,
-          username: email.split("@")[0],
-          password: hash,
-          name: fullname,
-          dateOfBirth: dateofbirth,
-          phone,
-          leader,
-          createdBy,
-        },
+      const stringMap = await tx.stringMap.findUnique({
+        where: { id: idRole },
       });
 
-      return userCreate;
+      if (stringMap) {
+        const userCreate = await tx.user.create({
+          data: {
+            email,
+            username: email.split("@")[0],
+            password: hash,
+            name: fullname,
+            dateOfBirth: dateofbirth,
+            phone,
+            leader,
+            createdBy,
+            inMobile: mobile,
+            role: {
+              create: {
+                id: stringMap.id,
+                name: stringMap.name,
+              },
+            },
+          },
+        });
+
+        return userCreate;
+      } else {
+        throw new Error(`Role yang di daftarkan tidak ada.`);
+      }
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

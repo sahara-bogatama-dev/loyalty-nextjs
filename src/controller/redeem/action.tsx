@@ -4,7 +4,8 @@ import _ from "lodash";
 
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import { listRedeemAgent } from "./listRedeem.db";
-import { approveRedeemAgent, Redeems } from "./crudRedeem.db";
+import { approveRedeemAgent, exchangePoints, Redeems } from "./crudRedeem.db";
+import sendMailer from "@/lib/node.mailer";
 
 //region labelng product
 const listDataRedeem = createServerAction(
@@ -31,5 +32,35 @@ const approveRedeem = createServerAction(
   }
 );
 
-export { listDataRedeem, approveRedeem };
+const exchangePointUser = createServerAction(
+  async ({ packageId, createdBy, userId, agentId, redeemCode }: Redeems) => {
+    try {
+      const data = await exchangePoints({
+        packageId,
+        createdBy,
+        userId,
+        agentId,
+        redeemCode,
+      });
+
+      if (data) {
+        await sendMailer({
+          send: data?.redeemPackage?.email ?? "",
+          cc: `${data.findAgentEmail?.email ?? ""}, no-reply@sahara.com`,
+          subject: `${data?.redeemPackage?.fullname} sudah melalukan tukar point.`,
+          html: `<html>
+                  <span>${redeemCode}</span>
+                </html>`,
+        });
+        return data;
+      } else {
+        throw new ServerActionError("Try again later.");
+      }
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+export { listDataRedeem, approveRedeem, exchangePointUser };
 //endregion

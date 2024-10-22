@@ -24,7 +24,7 @@ export interface BoothMember {
   photo: any;
   geolocation: string;
   createdBy?: string;
-  updatedBy?: any;
+  updatedBy?: string;
 }
 
 export async function addBoothOwner({
@@ -66,21 +66,23 @@ export async function addBoothOwner({
   }
 }
 
-export async function searchUser({ findSearch }: { findSearch?: string }) {
+export async function listUser() {
   try {
     return prisma.$transaction(async (tx) => {
-      const search = await tx.user.findMany({
+      const userRole = await tx.role.findMany({
         where: {
-          OR: [
-            { name: { contains: findSearch } },
-            { email: { contains: findSearch } },
-            { phone: { contains: findSearch } },
-          ],
+          id: { in: ["cm10arz4sg389CgUGMaUXFy", "cm10arz825kecxOiwXIAwiJ"] },
+        },
+      });
+
+      const listData = await tx.user.findMany({
+        where: {
+          id: { in: _.map(userRole, (o) => o.userId) },
         },
         orderBy: { createdAt: "asc" },
       });
 
-      return search;
+      return listData;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
@@ -129,27 +131,6 @@ export async function boothImage({ boothMemberId }: { boothMemberId: string }) {
     ]);
 
     return result;
-  } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
-  }
-}
-
-export async function searchBooth({ findSearch }: { findSearch?: string }) {
-  try {
-    return prisma.$transaction(async (tx) => {
-      const search = await tx.boothOwner.findMany({
-        where: {
-          OR: [
-            { fullname: { contains: findSearch } },
-            { email: { contains: findSearch } },
-            { phone: { contains: findSearch } },
-          ],
-        },
-        orderBy: { createdAt: "asc" },
-      });
-
-      return search;
-    });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
   }

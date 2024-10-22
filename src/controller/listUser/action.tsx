@@ -1,7 +1,13 @@
 "use server";
 
 import { listAllUser } from "./listUser.db";
-import { addRole, currentRole, deleteRole, listRole } from "./listRole.db";
+import {
+  addRole,
+  currentRole,
+  deleteRole,
+  listRole,
+  listRoleMobile,
+} from "./listRole.db";
 import { updateUser } from "./crudUser.db";
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import { userDetail } from "../userDetail/userDetail.db";
@@ -86,6 +92,16 @@ const createInternalUser = createServerAction(
 const roleUser = createServerAction(async () => {
   try {
     const data = await listRole();
+
+    return data;
+  } catch (error: any) {
+    throw new ServerActionError(error.message);
+  }
+});
+
+const roleUserMobile = createServerAction(async () => {
+  try {
+    const data = await listRoleMobile();
 
     return data;
   } catch (error: any) {
@@ -195,5 +211,6 @@ export {
   updateUsers,
   allUserData,
   currentRoleUser,
+  roleUserMobile,
 };
 //endregion

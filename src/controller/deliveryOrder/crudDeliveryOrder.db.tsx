@@ -5,7 +5,24 @@ import _ from "lodash";
 const prisma = new PrismaClient();
 
 export interface DeliveryOrder {
-  deliveryOrderId: string;
+  shippingDate?: string;
+  agentId?: string;
+  customerName?: string;
+  deliveryAddress?: string;
+  totalWeight?: number;
+  deliveryNote?: string;
+  status?: number;
+  product?: {
+    shipQty: number;
+    labelingBox: string;
+    labelingBoxId: string;
+    productName: string;
+    unit: string;
+    createdBy: string;
+    statusProduct: number;
+  }[];
+
+  deliveryOrderId?: string;
   receiveDate?: string;
   receiveBy?: string;
   receiveNote?: string;
@@ -160,6 +177,69 @@ export async function printDR({ deliveryOrderId }: DeliveryOrder) {
       });
 
       return data;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function listProductBox() {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const data = await tx.stokopname.findMany({
+        where: { labelingBoxId: { not: null }, status: { in: [4, 6] } },
+        distinct: ["labelingBoxId"],
+      });
+
+      return data;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function addDR({
+  shippingDate,
+  agentId,
+  customerName,
+  deliveryAddress,
+  totalWeight,
+  deliveryNote,
+  createdBy,
+  product,
+}: DeliveryOrder) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const findLastNumber = await tx.runningNumber.findUnique({
+        where: { id: "cm2iu3rcb008o0cl4cbln0bfz" },
+      });
+
+      const data = await tx.deliveryOrder.create({
+        data: {
+          noSurat: `FG/OUT/${findLastNumber?.value ?? 0}`,
+          orderNo: String(findLastNumber?.value) ?? "0",
+          shippingDate: shippingDate ?? dayjs().toDate(),
+          agentId: agentId ?? "",
+          customerName: customerName ?? "",
+          deliveryAddress: deliveryAddress ?? "",
+          totalWeight: totalWeight ?? 0,
+          deliveryNote,
+          status: 7,
+          createdBy,
+          deliveryOrderProduct: {
+            createMany: { data: product ?? [], skipDuplicates: true },
+          },
+        },
+      });
+
+      const updateRunningNumber = await tx.runningNumber.updateMany({
+        where: { id: "cm2iu3rcb008o0cl4cbln0bfz" },
+        data: {
+          value: { increment: 1 },
+        },
+      });
+
+      return { data, lastNumberDR: updateRunningNumber };
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

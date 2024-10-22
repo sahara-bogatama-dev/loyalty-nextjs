@@ -4,7 +4,7 @@ import _ from "lodash";
 
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import { listActivityLogPoint, listPointBank } from "./listPoint.db";
-import { pinaltyPoint, Point } from "./crudPoint.db";
+import { addPoint, pinaltyPoint, Point } from "./crudPoint.db";
 
 //region labelng product
 
@@ -42,5 +42,22 @@ const addPinalty = createServerAction(
   }
 );
 
-export { listDataPoint, listDataActivityLogPoint, addPinalty };
+const addPoints = createServerAction(
+  async ({ userId, createdBy, labelingProduct, scanDate }: Point) => {
+    try {
+      const data = await addPoint({
+        userId,
+        createdBy,
+        labelingProduct,
+        scanDate,
+      });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+export { listDataPoint, listDataActivityLogPoint, addPinalty, addPoints };
 //endregion

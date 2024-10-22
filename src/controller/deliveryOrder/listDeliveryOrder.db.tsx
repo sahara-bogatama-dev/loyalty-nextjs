@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import dayjs from "dayjs";
 import _ from "lodash";
 
 const prisma = new PrismaClient();
@@ -69,6 +70,91 @@ export async function listDeliveryOrderProduct({
           ...item,
 
           statusCode: item.statusProduct,
+          status: match ? match.name : "Unknown",
+          statusColor,
+        };
+      });
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function listDeliveryOrderMobile() {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const data = await tx.deliveryOrder.findMany({
+        where: { createdAt: { gte: dayjs().subtract(30, "day").toDate() } },
+        orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      });
+
+      const statusMap = await tx.stringMap.findMany({
+        where: { objectName: "Status" },
+      });
+
+      const colorMap = {
+        7: "lime",
+        8: "saddlebrown",
+        9: "royalblue",
+        10: "lavender",
+      } as any;
+
+      return data.map((item) => {
+        const match = _.find(statusMap, { key: item.status });
+        const statusColor = colorMap[item.status] || "gray";
+
+        return {
+          ...item,
+          totalWeight: String(item.totalWeight),
+          statusCode: item.status,
+          status: match ? match.name : "Unknown",
+          statusColor,
+        };
+      });
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function listDeliveryOrderRangeDate({
+  startDate,
+  endDate,
+}: {
+  startDate: Date;
+  endDate: Date;
+}) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const data = await tx.deliveryOrder.findMany({
+        where: {
+          createdAt: {
+            gte: dayjs(startDate).startOf("day").toDate(),
+            lte: dayjs(endDate).endOf("day").toDate(),
+          },
+        },
+        orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      });
+
+      const statusMap = await tx.stringMap.findMany({
+        where: { objectName: "Status" },
+      });
+
+      const colorMap = {
+        7: "lime",
+        8: "saddlebrown",
+        9: "royalblue",
+        10: "lavender",
+      } as any;
+
+      return data.map((item) => {
+        const match = _.find(statusMap, { key: item.status });
+        const statusColor = colorMap[item.status] || "gray";
+
+        return {
+          ...item,
+          totalWeight: String(item.totalWeight),
+          statusCode: item.status,
           status: match ? match.name : "Unknown",
           statusColor,
         };

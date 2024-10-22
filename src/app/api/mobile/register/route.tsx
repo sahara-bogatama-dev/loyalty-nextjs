@@ -1,5 +1,5 @@
-import { createUser } from "../../../controller/register/register.db";
-import { signUpSchema } from "../../../lib/zod";
+import { createUser } from "../../../../controller/register/register.db";
+import { signUpSchema } from "../../../../lib/zod";
 import { type NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -7,25 +7,30 @@ export async function POST(request: NextRequest) {
   try {
     const json = await request.json();
 
-    const { email, password, phone, dateofbirth, leader, fullname, createdBy } =
+    const { email, password, phone, dateofbirth, fullname, roles } =
       await signUpSchema.parseAsync(json);
 
-    await createUser({
+    const create = await createUser({
       email,
       password,
       phone,
       dateofbirth,
-      leader,
       fullname,
-      createdBy,
+      mobile: true,
+      idRole: roles,
     });
 
-    return NextResponse.json(
-      { message: "" },
-      {
-        status: 200,
-      }
-    );
+    if (create) {
+      return NextResponse.json(
+        {
+          message:
+            "Akun sudah berhasil di buat dan gagal membuat role (mobile). silahkan hubungu CS Sahara",
+        },
+        {
+          status: 200,
+        }
+      );
+    }
   } catch (error: any) {
     if (error instanceof ZodError) {
       // Return `null` to indicate that the credentials are invalid

@@ -8,7 +8,10 @@ import {
   updatePackageImage,
   updatePackageRedeem,
 } from "./crudPackage.db";
-import { listDataPackageRedeem } from "./listPackageRedeem.db";
+import {
+  listDataPackageRedeem,
+  listDataPackageRedeemByUserId,
+} from "./listPackageRedeem.db";
 
 //region package redeem
 const listPackage = createServerAction(async () => {
@@ -20,6 +23,18 @@ const listPackage = createServerAction(async () => {
     throw new ServerActionError(error.message);
   }
 });
+
+const listPackageUser = createServerAction(
+  async ({ userId }: { userId: string }) => {
+    try {
+      const data = await listDataPackageRedeemByUserId({ userId });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
 
 const addPackages = createServerAction(
   async ({
@@ -70,15 +85,6 @@ const updatePackage = createServerAction(
     updatedBy,
   }: PackageRedeems) => {
     try {
-      console.log(
-        packageId,
-        packageName,
-        costPoint,
-        limit,
-        description,
-        inActive,
-        updatedBy
-      );
       const data = await updatePackageRedeem({
         packageId,
         packageName,
@@ -126,5 +132,6 @@ export {
   deletePackages,
   updatePackage,
   changeImagePackage,
+  listPackageUser,
 };
 //endregion

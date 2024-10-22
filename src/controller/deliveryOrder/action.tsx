@@ -5,15 +5,19 @@ import _ from "lodash";
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import {
   listDeliveryOrder,
+  listDeliveryOrderMobile,
   listDeliveryOrderProduct,
 } from "./listDeliveryOrder.db";
 import {
+  addDR,
   canceledDR,
   DeliveryOrder,
+  listProductBox,
   printDR,
   receiveDR,
   submitDR,
 } from "./crudDeliveryOrder.db";
+import dayjs from "dayjs";
 
 //region labelng product
 
@@ -27,10 +31,22 @@ const listDataDelivery = createServerAction(async () => {
   }
 });
 
+const listDataDeliveryMobile = createServerAction(async () => {
+  try {
+    const data = await listDeliveryOrderMobile();
+
+    return data;
+  } catch (error: any) {
+    throw new ServerActionError(error.message);
+  }
+});
+
 const listDataDeliveryProduct = createServerAction(
   async ({ deliveryOrderId }: DeliveryOrder) => {
     try {
-      const data = await listDeliveryOrderProduct({ deliveryOrderId });
+      const data = await listDeliveryOrderProduct({
+        deliveryOrderId: deliveryOrderId ?? "",
+      });
 
       return data;
     } catch (error: any) {
@@ -101,6 +117,46 @@ const receivesDR = createServerAction(
   }
 );
 
+const addDRS = createServerAction(
+  async ({
+    shippingDate,
+    agentId,
+    customerName,
+    deliveryAddress,
+    totalWeight,
+    deliveryNote,
+    createdBy,
+    product,
+  }: DeliveryOrder) => {
+    try {
+      const data = await addDR({
+        shippingDate: shippingDate,
+        agentId: agentId ?? "",
+        customerName: customerName ?? "",
+        deliveryAddress: deliveryAddress ?? "",
+        totalWeight: totalWeight ?? 0,
+        deliveryNote,
+        product: product ?? [],
+        createdBy,
+      });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const listProductBoxs = createServerAction(async () => {
+  try {
+    const data = await listProductBox();
+
+    return data;
+  } catch (error: any) {
+    throw new ServerActionError(error.message);
+  }
+});
+
 export {
   listDataDelivery,
   listDataDeliveryProduct,
@@ -108,5 +164,8 @@ export {
   submitPrintDR,
   receivesDR,
   cancelDR,
+  listDataDeliveryMobile,
+  addDRS,
+  listProductBoxs,
 };
 //endregion

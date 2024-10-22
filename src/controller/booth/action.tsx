@@ -5,6 +5,13 @@ import _ from "lodash";
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 
 import { listDataMember, listDataOwner } from "./../booth/listBooth.db";
+import {
+  addBoothMember,
+  addBoothOwner,
+  BoothMember,
+  BoothOwner,
+  listUser,
+} from "./crudBooth.db";
 
 //region booth
 
@@ -30,5 +37,77 @@ const listMember = createServerAction(
   }
 );
 
-export { listOwner, listMember };
+const addBoothMembers = createServerAction(
+  async ({
+    userId,
+    address,
+    boothId,
+    photo,
+    geolocation,
+    createdBy,
+  }: BoothMember) => {
+    try {
+      const data = await addBoothMember({
+        userId,
+        address,
+        boothId,
+        photo,
+        geolocation,
+        createdBy,
+      });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const addBoothOwners = createServerAction(
+  async ({
+    userId,
+    address,
+    dateEstablishment,
+    ig,
+    fb,
+    ecm,
+    geolocation,
+    createdBy,
+  }: BoothOwner) => {
+    try {
+      const data = await addBoothOwner({
+        userId,
+        address,
+        dateEstablishment,
+        ig,
+        fb,
+        ecm,
+        geolocation,
+        createdBy,
+      });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const listUsersBooth = createServerAction(async () => {
+  try {
+    const data = await listUser();
+
+    return data;
+  } catch (error: any) {
+    throw new ServerActionError(error.message);
+  }
+});
+
+export {
+  listOwner,
+  listMember,
+  addBoothMembers,
+  addBoothOwners,
+  listUsersBooth,
+};
 //endregion

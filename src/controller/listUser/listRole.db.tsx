@@ -22,6 +22,25 @@ export async function listRole() {
   }
 }
 
+export async function listRoleMobile() {
+  try {
+    const [result] = await prisma.$transaction([
+      prisma.stringMap.findMany({
+        where: { objectName: "Roles", key: { in: [8, 9] } },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    return { result };
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
 export async function currentRole({ userId }: { userId: string }) {
   try {
     const [result] = await prisma.$transaction([

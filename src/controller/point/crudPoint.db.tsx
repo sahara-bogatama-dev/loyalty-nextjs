@@ -9,6 +9,9 @@ export interface Point {
   createdBy?: string;
   updatedBy?: string;
   point?: number;
+  userId?: string;
+  labelingProduct?: string;
+  scanDate?: string;
 }
 
 export async function pinaltyPoint({ pointId, point, updatedBy }: Point) {
@@ -47,6 +50,93 @@ export async function pinaltyPoint({ pointId, point, updatedBy }: Point) {
         return update;
       } else {
         throw new Error(`Penalty point gagal di berikan...`);
+      }
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
+export async function addPoint({
+  userId,
+  createdBy,
+  labelingProduct,
+  scanDate,
+}: Point) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const checkProductLabeling = await tx.labelingProduct.findFirst({
+        where: { codeLabel: labelingProduct },
+      });
+
+      if (checkProductLabeling) {
+        const checkDuplicateAnotherScan = await tx.pointReceiveLog.findMany({
+          where: { labelingProductId: checkProductLabeling.labelingProductId },
+        });
+
+        if (_.isEmpty(checkDuplicateAnotherScan)) {
+          let point = 0;
+
+          const getPoint = await tx.product.findFirst({
+            where: { productId: checkProductLabeling.productId },
+            include: {
+              campaign: {
+                where: {
+                  inActive: false,
+                  startDate: { lte: new Date() },
+                  endDate: { gte: new Date() },
+                },
+                select: {
+                  loyaltyPoint: true,
+                },
+              },
+            },
+          });
+
+          if (getPoint) {
+            point = getPoint.campaignId
+              ? getPoint.campaign?.loyaltyPoint ?? getPoint.basePoint
+              : getPoint.basePoint ?? 0;
+          }
+
+          const checkExistPoint = await tx.pointLoyalty.findFirst({
+            where: { userId },
+          });
+
+          if (checkExistPoint) {
+            const update = await tx.pointLoyalty.update({
+              where: { pointId: checkExistPoint.pointId },
+              data: {
+                point: { increment: point },
+                updatedBy: createdBy,
+                log: {
+                  create: {
+                    point: point,
+                    createdBy,
+                    userId: userId ?? "",
+                    status: 1,
+                    productCode: checkProductLabeling.productCode,
+                    productId: checkProductLabeling.productId,
+                    labelingProductId: checkProductLabeling.labelingProductId,
+                    labelingProducts: checkProductLabeling.codeLabel,
+                    scanDate,
+                    campaignId: getPoint?.campaignId,
+                  },
+                },
+              },
+            });
+
+            if (update) {
+              return update;
+            } else {
+              throw new Error(`Point gagal di berikan...`);
+            }
+          }
+        } else {
+          throw new Error("Kode Label ini sudah di gunakan.");
+        }
+      } else {
+        throw new Error(`Kode Label tidak di temukan.`);
       }
     });
   } catch (error: any) {

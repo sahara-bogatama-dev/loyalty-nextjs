@@ -1,5 +1,4 @@
 import { campaignImage } from "@/controller/campaign/crudCampaign.db";
-import { userDetail } from "@/controller/userDetail/userDetail.db";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";

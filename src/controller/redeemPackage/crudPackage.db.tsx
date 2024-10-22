@@ -12,7 +12,7 @@ export interface PackageRedeems {
   description?: string;
   inActive?: boolean;
   createdBy?: string;
-  updatedBy?: any;
+  updatedBy?: string;
 }
 
 export async function addPackage({
