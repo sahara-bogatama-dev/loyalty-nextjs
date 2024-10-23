@@ -3,7 +3,7 @@
 import _ from "lodash";
 
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
-import { listRedeemAgent } from "./listRedeem.db";
+import { listMyRedeem, listRedeemAgent } from "./listRedeem.db";
 import { approveRedeemAgent, exchangePoints, Redeems } from "./crudRedeem.db";
 import sendMailer from "@/lib/node.mailer";
 
@@ -12,6 +12,18 @@ const listDataRedeem = createServerAction(
   async ({ email }: { email: string }) => {
     try {
       const data = await listRedeemAgent({ email });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const listDataMyRedeem = createServerAction(
+  async ({ userId }: { userId: string }) => {
+    try {
+      const data = await listMyRedeem({ userId });
 
       return data;
     } catch (error: any) {
@@ -62,5 +74,5 @@ const exchangePointUser = createServerAction(
   }
 );
 
-export { listDataRedeem, approveRedeem, exchangePointUser };
+export { listDataRedeem, approveRedeem, exchangePointUser, listDataMyRedeem };
 //endregion
