@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
     if (create) {
       return NextResponse.json(
         {
-          message:
-            "Akun sudah berhasil di buat dan gagal membuat role (mobile). silahkan hubungu CS Sahara",
+          message: "Akun sudah berhasil di buat.",
         },
         {
           status: 200,
