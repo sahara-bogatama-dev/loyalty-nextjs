@@ -27,6 +27,24 @@ export interface BoothMember {
   updatedBy?: string;
 }
 
+export async function detailOwner({ userId }: { userId: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const findUserExist = await tx.user.findUnique({ where: { id: userId } });
+
+      if (findUserExist) {
+        const find = await tx.boothOwner.findFirst({
+          where: { userId },
+        });
+
+        return find;
+      }
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
 export async function addBoothOwner({
   userId,
   address,

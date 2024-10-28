@@ -10,6 +10,7 @@ import {
   addBoothOwner,
   BoothMember,
   BoothOwner,
+  detailOwner,
   listUser,
 } from "./crudBooth.db";
 
@@ -29,6 +30,18 @@ const listMember = createServerAction(
   async ({ boothId }: { boothId: string }) => {
     try {
       const data = await listDataMember({ boothId });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+const detailOwners = createServerAction(
+  async ({ userId }: { userId: string }) => {
+    try {
+      const data = await detailOwner({ userId });
 
       return data;
     } catch (error: any) {
@@ -109,5 +122,6 @@ export {
   addBoothMembers,
   addBoothOwners,
   listUsersBooth,
+  detailOwners,
 };
 //endregion
