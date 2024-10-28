@@ -79,3 +79,39 @@ export function createUser({
     throw new Error(`Error ${error.message}`);
   }
 }
+
+export async function forgotPasasUser({
+  email,
+  password,
+}: {
+  email?: string;
+  password: string;
+}) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const searchUser = await tx.user.findFirst({
+        where: {
+          email,
+        },
+      });
+
+      if (searchUser) {
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password, salt);
+
+        const update = await tx.user.update({
+          where: { id: searchUser.id },
+          data: {
+            password,
+          },
+        });
+
+        return update;
+      } else {
+        throw new Error(`Akun tidak ditemukan.`);
+      }
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
