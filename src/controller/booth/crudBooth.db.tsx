@@ -11,7 +11,7 @@ export interface BoothOwner {
   ig?: string;
   fb?: string;
   ecm?: string;
-  geolocation: string;
+  geolocation?: string;
   createdBy?: string;
   updatedBy?: any;
 }
