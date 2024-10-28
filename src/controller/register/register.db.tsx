@@ -102,7 +102,7 @@ export async function forgotPasasUser({
         const update = await tx.user.update({
           where: { id: searchUser.id },
           data: {
-            password,
+            password: hash,
           },
         });
 

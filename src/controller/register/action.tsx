@@ -19,6 +19,7 @@ const forgotUser = createServerAction(async ({ email }: { email?: string }) => {
     if (email) {
       try {
         const created = await forgotPasasUser({
+          email: email,
           password: dayjs(randomDate).format("DDMMMMYYYY"),
         });
 
