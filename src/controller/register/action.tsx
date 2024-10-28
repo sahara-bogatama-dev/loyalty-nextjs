@@ -17,29 +17,25 @@ const forgotUser = createServerAction(async ({ email }: { email?: string }) => {
     );
 
     if (email) {
-      try {
-        const created = await forgotPasasUser({
-          email: email,
-          password: dayjs(randomDate).format("DDMMMMYYYY"),
-        });
+      const created = await forgotPasasUser({
+        email: email,
+        password: dayjs(randomDate).format("DDMMMMYYYY"),
+      });
 
-        if (created) {
-          await sendMailer({
-            send: created.email ?? "",
-            subject: `${created.name} forgot successfuly.`,
-            html: `<html>
+      if (created) {
+        await sendMailer({
+          send: created.email ?? "",
+          subject: `${created.name} forgot successfuly.`,
+          html: `<html>
                   <span>Temp Pass ${dayjs(randomDate).format(
                     "DDMMMMYYYY"
                   )}</span>
                 </html>`,
-          });
+        });
 
-          return created;
-        } else {
-          throw new ServerActionError("Try again later.");
-        }
-      } catch (error: any) {
-        throw new ServerActionError(error.message);
+        return created;
+      } else {
+        throw new ServerActionError("Try again later.");
       }
     }
   } catch (error: any) {

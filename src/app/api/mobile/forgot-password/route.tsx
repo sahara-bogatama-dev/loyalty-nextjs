@@ -14,13 +14,22 @@ export async function POST(request: NextRequest) {
       email,
     });
 
-    if (create) {
+    console.log(create);
+
+    if (create.success) {
       return NextResponse.json(
         {
           message: "Password berhasil di kirim melalui email.",
         },
         {
           status: 200,
+        }
+      );
+    } else {
+      return NextResponse.json(
+        { message: create.error },
+        {
+          status: 403,
         }
       );
     }
