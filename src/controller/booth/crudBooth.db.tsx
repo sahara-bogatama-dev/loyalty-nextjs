@@ -8,9 +8,9 @@ export interface BoothOwner {
   userId: string;
   address: string;
   dateEstablishment: string;
-  ig: string;
-  fb: string;
-  ecm: string;
+  ig?: string;
+  fb?: string;
+  ecm?: string;
   geolocation: string;
   createdBy?: string;
   updatedBy?: any;
