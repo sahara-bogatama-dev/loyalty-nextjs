@@ -1,4 +1,5 @@
 import { userRoles } from "@/controller/listUser/action";
+import { userDetail } from "@/controller/userDetail/userDetail.db";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -7,10 +8,11 @@ export const GET = auth(async function GET(req, ctx) {
   try {
     if (req.auth) {
       const userRole = await userRoles({ id: req.auth.user?.id as string });
+      const getDetail = await userDetail({ id: req.auth.user?.id as string });
 
       return NextResponse.json(
         {
-          users: req.auth.user,
+          users: getDetail,
           role: userRole.success ? userRole.value : [],
         },
         {
