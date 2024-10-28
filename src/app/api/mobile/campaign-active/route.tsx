@@ -1,5 +1,6 @@
 import { listCampaignActives } from "@/controller/campaign/action";
 import { auth } from "@/lib/auth";
+import _ from "lodash";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -10,7 +11,12 @@ export const GET = auth(async function GET(req, ctx) {
 
       return NextResponse.json(
         {
-          activeCampaign: activeCampaign.success ? activeCampaign.value : [],
+          activeCampaign: activeCampaign.success
+            ? _.map(activeCampaign.value, (o) => ({
+                ...o,
+                photo: `https://sahara-app.vercel.app/api/campaign/image/${o.campaignId}`,
+              }))
+            : [],
         },
         {
           status: 200,
