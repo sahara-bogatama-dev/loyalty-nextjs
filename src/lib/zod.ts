@@ -88,10 +88,10 @@ export const boothOwnerInSchema = z.object({
   dateEstablishment: z.string({
     required_error: "Date of Establishment is required.",
   }),
-  ig: z.string({ required_error: "Instagram handle is required." }),
-  fb: z.string({ required_error: "Facebook handle is required." }),
-  ecm: z.string({ required_error: "ECM is required." }),
-  geolocation: z.string({ required_error: "Geolocation is required." }),
+  ig: z.string({ required_error: "Instagram handle is required." }).optional(),
+  fb: z.string({ required_error: "Facebook handle is required." }).optional(),
+  ecm: z.string({ required_error: "ECM is required." }).optional(),
+  geolocation: z.string().optional(),
 });
 
 export const addPointInSchema = z.object({
