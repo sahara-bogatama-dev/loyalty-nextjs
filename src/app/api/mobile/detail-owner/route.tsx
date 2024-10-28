@@ -8,14 +8,25 @@ export const GET = auth(async function GET(req, ctx) {
     if (req.auth) {
       const data = await detailOwners({ userId: req.auth.user?.id as string });
 
-      return NextResponse.json(
-        {
-          detailOwner: data,
-        },
-        {
-          status: 200,
-        }
-      );
+      if (data.success) {
+        return NextResponse.json(
+          {
+            detailOwner: data.value,
+          },
+          {
+            status: 200,
+          }
+        );
+      } else {
+        return NextResponse.json(
+          {
+            message: data.error,
+          },
+          {
+            status: 403,
+          }
+        );
+      }
     } else {
       return NextResponse.json(
         { message: "Not authenticated" },
