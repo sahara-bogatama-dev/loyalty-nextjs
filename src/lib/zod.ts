@@ -83,6 +83,10 @@ export const boothMemberInSchema = z.object({
   geolocation: z.string().optional(),
 });
 
+export const listBoothMemberInSchema = z.object({
+  boothId: z.string({ required_error: "Booth ID is required." }),
+});
+
 export const boothOwnerInSchema = z.object({
   address: z.string({ required_error: "Address is required." }),
   dateEstablishment: z.string({
