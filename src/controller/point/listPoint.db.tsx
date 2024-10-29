@@ -37,7 +37,28 @@ export async function pointData({ userId }: { userId: string }) {
         orderBy: { createdAt: "desc" },
       });
 
-      return data;
+      const statusMap = await tx.stringMap.findMany({
+        where: { objectName: "Point Status" },
+      });
+
+      const colorMap = {
+        1: "green",
+        2: "magenta",
+        3: "geekblue",
+      } as any;
+
+      const log = data?.log.map((item) => {
+        const match = _.find(statusMap, { key: item.status });
+        const statusColor = colorMap[item.status] || "gray";
+
+        return {
+          ...item,
+          statusCode: item.status,
+          status: match ? match.name : "Unknown",
+          statusColor,
+        };
+      });
+      return { ...data, log };
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
