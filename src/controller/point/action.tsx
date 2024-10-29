@@ -3,7 +3,7 @@
 import _ from "lodash";
 
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
-import { listActivityLogPoint, listPointBank } from "./listPoint.db";
+import { listActivityLogPoint, listPointBank, pointData } from "./listPoint.db";
 import { addPoint, pinaltyPoint, Point } from "./crudPoint.db";
 
 //region labelng product
@@ -17,6 +17,18 @@ const listDataPoint = createServerAction(async () => {
     throw new ServerActionError(error.message);
   }
 });
+
+const listCurrentPoint = createServerAction(
+  async ({ userId }: { userId: string }) => {
+    try {
+      const data = await pointData({ userId });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
 
 const listDataActivityLogPoint = createServerAction(
   async ({ pointId }: Point) => {
@@ -59,5 +71,11 @@ const addPoints = createServerAction(
   }
 );
 
-export { listDataPoint, listDataActivityLogPoint, addPinalty, addPoints };
+export {
+  listDataPoint,
+  listDataActivityLogPoint,
+  addPinalty,
+  addPoints,
+  listCurrentPoint,
+};
 //endregion

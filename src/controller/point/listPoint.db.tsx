@@ -26,6 +26,24 @@ export async function listPointBank() {
   }
 }
 
+export async function pointData({ userId }: { userId: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const data = await tx.pointLoyalty.findFirst({
+        where: { userId },
+        include: {
+          log: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return data;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
 export async function listActivityLogPoint({ pointId }: Point) {
   try {
     return prisma.$transaction(async (tx) => {
