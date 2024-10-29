@@ -93,9 +93,16 @@ export async function listUser() {
         },
       });
 
+      const existUser = await tx.booth.findMany({
+        where: { userId: { in: _.map(userRole, (o) => o.userId) } },
+      });
+
       const listData = await tx.user.findMany({
         where: {
-          id: { in: _.map(userRole, (o) => o.userId) },
+          id: {
+            in: _.map(userRole, (o) => o.userId),
+            notIn: _.map(existUser, (o) => o.userId),
+          },
         },
         orderBy: { createdAt: "asc" },
       });
