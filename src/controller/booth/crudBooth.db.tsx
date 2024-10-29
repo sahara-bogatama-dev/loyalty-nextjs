@@ -19,10 +19,10 @@ export interface BoothOwner {
 export interface BoothMember {
   boothId: string;
   boothMemberId?: string;
-  userId: string;
-  address: string;
-  photo: any;
-  geolocation: string;
+  userId?: string;
+  address?: string;
+  photo?: any;
+  geolocation?: string;
   createdBy?: string;
   updatedBy?: string;
 }
@@ -125,7 +125,7 @@ export async function addBoothMember({
             boothId,
             fullname: findUserExist.name,
             userId: findUserExist.id,
-            address,
+            address: address ?? "",
             email: findUserExist.email,
             phone: findUserExist.phone,
             photoBooth: photo,

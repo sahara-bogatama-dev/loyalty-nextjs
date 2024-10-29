@@ -80,7 +80,7 @@ export const boothMemberInSchema = z.object({
   userId: z.string({ required_error: "User ID is required." }),
   address: z.string({ required_error: "Address is required." }),
   photo: z.string({ required_error: "Photo is required." }),
-  geolocation: z.string({ required_error: "Geolocation is required." }),
+  geolocation: z.string().optional(),
 });
 
 export const boothOwnerInSchema = z.object({
