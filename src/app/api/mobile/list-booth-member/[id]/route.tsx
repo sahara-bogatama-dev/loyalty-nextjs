@@ -1,5 +1,6 @@
-import { listMember, listUsersBooth } from "@/controller/booth/action";
+import { listMember } from "@/controller/booth/action";
 import { auth } from "@/lib/auth";
+import _ from "lodash";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -11,11 +12,16 @@ export const GET = auth(async function GET(req, ctx) {
         ? params.id[0]
         : params?.id ?? "";
 
-      const listUser = await listMember({ boothId });
+      const boothData = await listMember({ boothId });
 
       return NextResponse.json(
         {
-          listBooth: listUser.success ? listUser.value : [],
+          listBooth: boothData.success
+            ? _.map(boothData.value.result, (o) => ({
+                ...o,
+                photo: `https://sahara-app.vercel.app/api/booth/image/${o.boothMemberId}`,
+              }))
+            : [],
         },
         {
           status: 200,
