@@ -5,16 +5,15 @@ import { addPointInSchema, exchangePointInSchema } from "@/lib/zod";
 import _ from "lodash";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import crypto from "crypto";
 
-const generateRedeemCode = (): string => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const codeLength = 12;
-
-  return Array.from(
-    { length: codeLength },
-    () => characters[Math.floor(Math.random() * characters.length)]
-  ).join("");
-};
+function generateRedeemCode(length = 10) {
+  return crypto
+    .randomBytes(Math.ceil(length / 2))
+    .toString("hex")
+    .slice(0, length)
+    .toUpperCase();
+}
 
 export const POST = auth(async function POST(req, ctx) {
   try {
@@ -32,7 +31,7 @@ export const POST = auth(async function POST(req, ctx) {
         packageId,
         createdBy,
         agentId,
-        redeemCode: generateRedeemCode(),
+        redeemCode: generateRedeemCode(8),
       });
 
       if (addExchange.success) {
@@ -50,7 +49,7 @@ export const POST = auth(async function POST(req, ctx) {
             message: addExchange.error,
           },
           {
-            status: 200,
+            status: 403,
           }
         );
       }

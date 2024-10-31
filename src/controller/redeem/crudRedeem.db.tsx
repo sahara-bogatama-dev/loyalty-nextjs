@@ -61,11 +61,11 @@ export async function exchangePoints({
       });
 
       if (checkAvaiablePackage) {
-        const summaryRedeem = await tx.redeem.findMany({
+        const summaryRedeem = await tx.redeem.count({
           where: { packageId },
         });
 
-        if (checkAvaiablePackage.limit === _.size(summaryRedeem)) {
+        if (checkAvaiablePackage.limit === summaryRedeem) {
           throw new Error(`Package Redeem limit sudah mencapai batas`);
         } else {
           const redeemPackage = await tx.redeem.create({
@@ -112,6 +112,8 @@ export async function exchangePoints({
               } else {
                 throw new Error(`Gagal meredeem package.`);
               }
+            } else {
+              throw new Error(`Gagal Upadate Point`);
             }
           } else {
             throw new Error(`Point user tidak di temukan.`);

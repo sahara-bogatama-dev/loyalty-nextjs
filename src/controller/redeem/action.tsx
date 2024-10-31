@@ -47,6 +47,7 @@ const approveRedeem = createServerAction(
 const exchangePointUser = createServerAction(
   async ({ packageId, createdBy, userId, agentId, redeemCode }: Redeems) => {
     try {
+      console.log(redeemCode);
       const data = await exchangePoints({
         packageId,
         createdBy,
@@ -58,7 +59,7 @@ const exchangePointUser = createServerAction(
       if (data) {
         await sendMailer({
           send: data?.redeemPackage?.email ?? "",
-          cc: `${data.findAgentEmail?.email ?? ""}, no-reply@sahara.com`,
+          cc: `${data.findAgentEmail?.email}, no-reply@sahara.com`,
           subject: `${data?.redeemPackage?.fullname} sudah melalukan tukar point.`,
           html: `<html>
                   <span>${redeemCode}</span>
