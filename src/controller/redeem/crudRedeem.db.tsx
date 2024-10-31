@@ -46,7 +46,6 @@ export async function approveRedeemAgent({ redeemId, updatedBy }: Redeems) {
     throw new Error(`Error ${error.message}`);
   }
 }
-
 export async function exchangePoints({
   packageId,
   createdBy,
@@ -55,75 +54,67 @@ export async function exchangePoints({
   redeemCode,
 }: Redeems) {
   try {
-    return prisma.$transaction(async (tx) => {
-      const checkAvaiablePackage = await tx.packageRedeem.findUnique({
+    return await prisma.$transaction(async (tx) => {
+      // Step 1: Check if the package exists
+      const checkAvailablePackage = await tx.packageRedeem.findUnique({
         where: { packageId },
       });
-
-      if (checkAvaiablePackage) {
-        const summaryRedeem = await tx.redeem.count({
-          where: { packageId },
-        });
-
-        if (checkAvaiablePackage.limit === summaryRedeem) {
-          throw new Error(`Package Redeem limit sudah mencapai batas`);
-        } else {
-          const redeemPackage = await tx.redeem.create({
-            data: {
-              userId,
-              agentId,
-              packageId: checkAvaiablePackage.packageId,
-              packageName: checkAvaiablePackage.packageName,
-              redeemCode: redeemCode ?? "",
-              status: 1,
-              createdBy,
-            },
-          });
-
-          if (redeemPackage) {
-            const findAgentEmail = await tx.agent.findUnique({
-              where: { agentId },
-            });
-            const findCurrentPoint = await tx.pointLoyalty.findFirst({
-              where: { userId },
-            });
-
-            if (findCurrentPoint) {
-              const updatePoint = await tx.pointLoyalty.update({
-                where: {
-                  pointId: findCurrentPoint.pointId,
-                },
-                data: {
-                  point: { decrement: checkAvaiablePackage.costPoint },
-                  updatedBy: createdBy,
-                  log: {
-                    create: {
-                      userId: userId ?? "",
-                      point: checkAvaiablePackage.costPoint,
-                      createdBy,
-                      status: 3,
-                    },
-                  },
-                },
-              });
-
-              if (updatePoint) {
-                return { updatePoint, redeemPackage, findAgentEmail };
-              } else {
-                throw new Error(`Gagal meredeem package.`);
-              }
-            } else {
-              throw new Error(`Gagal Upadate Point`);
-            }
-          } else {
-            throw new Error(`Point user tidak di temukan.`);
-          }
-        }
-      } else {
+      if (!checkAvailablePackage) {
         throw new Error(`Package Redeem tidak ditemukan`);
       }
+
+      // Step 2: Check if the redeem limit is reached
+      const summaryRedeem = await tx.redeem.count({
+        where: { packageId },
+      });
+      if (checkAvailablePackage.limit === summaryRedeem) {
+        throw new Error(`Package Redeem limit sudah mencapai batas`);
+      }
+
+      // Step 3: Create redeem package entry
+      const redeemPackage = await tx.redeem.create({
+        data: {
+          userId,
+          agentId,
+          packageId: checkAvailablePackage.packageId,
+          packageName: checkAvailablePackage.packageName,
+          redeemCode: redeemCode ?? "",
+          status: 1,
+          createdBy,
+        },
+      });
+
+      // Step 4: Find agent email and user’s current points
+      const findAgentEmail = await tx.agent.findUnique({
+        where: { agentId },
+      });
+      const findCurrentPoint = await tx.pointLoyalty.findFirst({
+        where: { userId },
+      });
+      if (!findCurrentPoint) {
+        throw new Error(`Gagal Update Point`);
+      }
+
+      // Step 5: Update user points and add log
+      const updatePoint = await tx.pointLoyalty.update({
+        where: { pointId: findCurrentPoint.pointId },
+        data: {
+          point: { decrement: checkAvailablePackage.costPoint },
+          updatedBy: createdBy,
+          log: {
+            create: {
+              userId: userId ?? "",
+              point: checkAvailablePackage.costPoint,
+              createdBy,
+              status: 3,
+            },
+          },
+        },
+      });
+
+      return { updatePoint, redeemPackage, findAgentEmail };
     });
   } catch (error: any) {
-    throw new Error(`Error ${error.message}`);
+    throw new Error(`Error: ${error.message}`);
   }
 }
