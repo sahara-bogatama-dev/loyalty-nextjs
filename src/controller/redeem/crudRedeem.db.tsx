@@ -55,6 +55,15 @@ export async function exchangePoints({
 }: Redeems) {
   try {
     return await prisma.$transaction(async (tx) => {
+      //Step 0: check if the user exist
+      const checkAvailableUser = await tx.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!checkAvailableUser) {
+        throw new Error(`User tidak ditemukan`);
+      }
+
       // Step 1: Check if the package exists
       const checkAvailablePackage = await tx.packageRedeem.findUnique({
         where: { packageId },
@@ -76,6 +85,9 @@ export async function exchangePoints({
         data: {
           userId,
           agentId,
+          email: checkAvailableUser?.email,
+          fullname: checkAvailableUser?.name,
+          phone: checkAvailableUser?.phone,
           packageId: checkAvailablePackage.packageId,
           packageName: checkAvailablePackage.packageName,
           redeemCode: redeemCode ?? "",
