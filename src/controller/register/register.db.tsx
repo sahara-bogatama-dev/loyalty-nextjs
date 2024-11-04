@@ -143,8 +143,6 @@ export async function forgotPasasUser({
         },
       });
 
-      console.log(searchUser);
-
       if (searchUser) {
         const salt = bcrypt.genSaltSync(10);
         const hash = bcrypt.hashSync(password, salt);

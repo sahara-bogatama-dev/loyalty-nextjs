@@ -13,7 +13,7 @@ import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import { userDetail } from "../userDetail/userDetail.db";
 import _ from "lodash";
 import dayjs from "dayjs";
-import { createUser, createUserInternal } from "../register/register.db";
+import { createUserInternal } from "../register/register.db";
 import sendMailer from "@/lib/node.mailer";
 
 //region list User
@@ -163,6 +163,7 @@ const updateUsers = createServerAction(
     bod,
     leader,
     inActive,
+    inMobile,
   }: {
     userId?: string;
     updatedBy?: string;
@@ -172,6 +173,7 @@ const updateUsers = createServerAction(
     bod?: string;
     leader?: string;
     inActive?: boolean;
+    inMobile?: boolean;
   }) => {
     try {
       const data = await updateUser({
@@ -183,6 +185,7 @@ const updateUsers = createServerAction(
         leader,
         userId,
         inActive,
+        inMobile,
       });
 
       return data;

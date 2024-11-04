@@ -75,26 +75,26 @@ export async function addRole({
         where: { id: idRole },
       });
 
-      if (stringMap) {
-        const existRole = await tx.role.findFirst({ where: { id: idRole } });
-
-        if (!existRole) {
-          const addRole = await tx.role.create({
-            data: {
-              id: stringMap.id,
-              name: stringMap.name,
-              userId: id,
-              createdBy,
-            },
-          });
-
-          return addRole;
-        } else {
-          throw new Error("Role sudah ditambakan.");
-        }
-      } else {
-        throw new Error("Role tidak ditemukan.");
+      if (!stringMap) {
+        throw new Error("Role not found.");
       }
+
+      const existRole = await tx.role.findFirst({
+        where: { id: idRole, userId: id },
+      });
+
+      if (existRole) {
+        throw new Error("Role already exists for this user.");
+      }
+
+      return await tx.role.create({
+        data: {
+          id: stringMap.id,
+          name: stringMap.name,
+          userId: id,
+          createdBy,
+        },
+      });
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

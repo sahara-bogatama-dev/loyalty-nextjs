@@ -13,6 +13,7 @@ export async function updateUser({
   bod,
   leader,
   inActive,
+  inMobile,
 }: {
   userId?: string;
   updatedBy?: string;
@@ -22,6 +23,7 @@ export async function updateUser({
   bod?: string;
   leader?: string;
   inActive?: boolean;
+  inMobile?: boolean;
 }) {
   try {
     return prisma.$transaction(async (tx) => {
@@ -32,6 +34,7 @@ export async function updateUser({
       if (bod) updateData.dateOfBirth = bod;
       if (leader) updateData.leader = leader;
       if (inActive !== undefined) updateData.inActive = inActive;
+      if (inMobile !== undefined) updateData.inMobile = inMobile;
 
       updateData.updatedBy = updatedBy;
 

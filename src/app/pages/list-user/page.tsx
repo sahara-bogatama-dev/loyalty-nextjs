@@ -466,6 +466,13 @@ export default function Home() {
                     editable: true,
                   },
                   {
+                    field: "inMobile",
+                    headerName: "InMobile",
+                    type: "boolean",
+                    width: 120,
+                    editable: true,
+                  },
+                  {
                     field: "name",
                     headerName: "Nama Lengkap",
                     minWidth: 250,
