@@ -13,7 +13,7 @@ import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import { userDetail } from "../userDetail/userDetail.db";
 import _ from "lodash";
 import dayjs from "dayjs";
-import { createUser } from "../register/register.db";
+import { createUser, createUserInternal } from "../register/register.db";
 import sendMailer from "@/lib/node.mailer";
 
 //region list User
@@ -54,7 +54,7 @@ const createInternalUser = createServerAction(
 
       if (email) {
         try {
-          const created = await createUser({
+          const created = await createUserInternal({
             password: dayjs(randomDate).format("DDMMMMYYYY"),
             fullname: fullname ?? "",
             email: email ?? "",
