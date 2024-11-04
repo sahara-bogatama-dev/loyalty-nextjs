@@ -117,3 +117,32 @@ export async function forgotPasasUser({
     throw new Error(`Error ${error.message}`);
   }
 }
+
+export function changePassword({
+  userId,
+  password,
+  updatedBy,
+}: {
+  userId: string;
+  password: string;
+  updatedBy: string;
+}) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+
+      const changePassword = await tx.user.update({
+        where: { id: userId },
+        data: {
+          password: hash,
+          updatedBy,
+        },
+      });
+
+      return changePassword;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}

@@ -3,7 +3,7 @@
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import _ from "lodash";
 import dayjs from "dayjs";
-import { forgotPasasUser } from "../register/register.db";
+import { changePassword, forgotPasasUser } from "../register/register.db";
 import sendMailer from "@/lib/node.mailer";
 
 const forgotUser = createServerAction(async ({ email }: { email?: string }) => {
@@ -43,4 +43,28 @@ const forgotUser = createServerAction(async ({ email }: { email?: string }) => {
   }
 });
 
-export { forgotUser };
+const changePasswords = createServerAction(
+  async ({
+    userId,
+    password,
+    updatedBy,
+  }: {
+    userId: string;
+    password: string;
+    updatedBy: string;
+  }) => {
+    try {
+      const updatedPass = await changePassword({
+        userId,
+        password,
+        updatedBy,
+      });
+
+      return updatedPass;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
+export { forgotUser, changePasswords };
