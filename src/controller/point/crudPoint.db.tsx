@@ -117,6 +117,7 @@ export async function addPoint({
                     status: 1,
                     productCode: checkProductLabeling.productCode,
                     productId: checkProductLabeling.productId,
+                    productName: checkProductLabeling.productName,
                     labelingProductId: checkProductLabeling.labelingProductId,
                     labelingProducts: checkProductLabeling.codeLabel,
                     scanDate,
