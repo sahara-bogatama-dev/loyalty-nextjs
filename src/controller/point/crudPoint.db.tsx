@@ -133,10 +133,10 @@ export async function addPoint({
             }
           }
         } else {
-          throw new Error("Kode Label ini sudah di gunakan.");
+          throw new Error("Mohon Maaf QR ini sudah di-scan sebelumnya.");
         }
       } else {
-        throw new Error(`Kode Label tidak di temukan.`);
+        throw new Error(`Mohon Maaf QR ini tidak di temukan.`);
       }
     });
   } catch (error: any) {
