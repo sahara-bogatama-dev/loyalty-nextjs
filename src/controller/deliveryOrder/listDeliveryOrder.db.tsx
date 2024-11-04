@@ -80,11 +80,11 @@ export async function listDeliveryOrderProduct({
   }
 }
 
-export async function listDeliveryOrderMobile() {
+export async function listDeliveryOrderMobile({ days }: { days: number }) {
   try {
     return prisma.$transaction(async (tx) => {
       const data = await tx.deliveryOrder.findMany({
-        where: { createdAt: { gte: dayjs().subtract(30, "day").toDate() } },
+        where: { createdAt: { gte: dayjs().subtract(days, "day").toDate() } },
         orderBy: [{ status: "asc" }, { createdAt: "desc" }],
       });
 

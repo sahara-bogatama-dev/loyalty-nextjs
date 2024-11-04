@@ -31,15 +31,17 @@ const listDataDelivery = createServerAction(async () => {
   }
 });
 
-const listDataDeliveryMobile = createServerAction(async () => {
-  try {
-    const data = await listDeliveryOrderMobile();
+const listDataDeliveryMobile = createServerAction(
+  async ({ days }: { days: number }) => {
+    try {
+      const data = await listDeliveryOrderMobile({ days });
 
-    return data;
-  } catch (error: any) {
-    throw new ServerActionError(error.message);
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
   }
-});
+);
 
 const listDataDeliveryProduct = createServerAction(
   async ({ deliveryOrderId }: DeliveryOrder) => {

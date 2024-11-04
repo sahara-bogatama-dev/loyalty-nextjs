@@ -6,7 +6,12 @@ import { ZodError } from "zod";
 export const GET = auth(async function GET(req, ctx) {
   try {
     if (req.auth) {
-      const listDR = await listDataDeliveryMobile({ days: 30 });
+      const { params } = ctx;
+      const days = Array.isArray(params?.id)
+        ? params.days[0]
+        : params?.days ?? 30;
+
+      const listDR = await listDataDeliveryMobile({ days: days as number });
 
       return NextResponse.json(
         {
