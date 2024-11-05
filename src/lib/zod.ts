@@ -54,6 +54,8 @@ export const signInSchema = z.object({
 });
 
 export const createDRInSchema = z.object({
+  noSurat: z.string({ required_error: "No Surat is required" }),
+  noOrder: z.string({ required_error: "No Order is required" }),
   shippingDate: z.string({ required_error: "Shipping Date is required" }),
   agentId: z
     .string({ required_error: "Agent ID is required" })

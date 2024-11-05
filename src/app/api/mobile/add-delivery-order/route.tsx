@@ -18,11 +18,15 @@ export const POST = auth(async function POST(req, ctx) {
         totalWeight,
         deliveryNote,
         product,
+        noOrder,
+        noSurat,
       } = await createDRInSchema.parseAsync(json);
 
       const createdBy = req.auth?.user?.name ?? "";
 
       const addDR = await addDRS({
+        noOrder,
+        noSurat,
         shippingDate,
         agentId,
         customerName,

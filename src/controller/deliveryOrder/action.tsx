@@ -122,6 +122,8 @@ const receivesDR = createServerAction(
 
 const addDRS = createServerAction(
   async ({
+    noOrder,
+    noSurat,
     shippingDate,
     agentId,
     customerName,
@@ -133,6 +135,8 @@ const addDRS = createServerAction(
   }: DeliveryOrder) => {
     try {
       const data = await addDR({
+        noOrder,
+        noSurat,
         shippingDate: shippingDate,
         agentId: agentId ?? "",
         customerName: customerName ?? "",

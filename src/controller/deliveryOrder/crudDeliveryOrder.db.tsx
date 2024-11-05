@@ -21,7 +21,8 @@ export interface DeliveryOrder {
     createdBy: string;
     statusProduct: number;
   }[];
-
+  noSurat?: string;
+  noOrder?: string;
   deliveryOrderId?: string;
   receiveDate?: string;
   receiveBy?: string;
@@ -217,6 +218,8 @@ export async function findProductBox({ labelingBox }: { labelingBox: string }) {
 }
 
 export async function addDR({
+  noSurat,
+  noOrder,
   shippingDate,
   agentId,
   customerName,
@@ -228,14 +231,10 @@ export async function addDR({
 }: DeliveryOrder) {
   try {
     return prisma.$transaction(async (tx) => {
-      const findLastNumber = await tx.runningNumber.findUnique({
-        where: { id: "cm2iu3rcb008o0cl4cbln0bfz" },
-      });
-
       const data = await tx.deliveryOrder.create({
         data: {
-          noSurat: `FG/OUT/${findLastNumber?.value ?? 0}`,
-          orderNo: String(findLastNumber?.value) ?? "0",
+          noSurat: noSurat ?? "",
+          orderNo: noOrder ?? "",
           shippingDate: shippingDate ?? dayjs().toDate(),
           agentId: agentId ?? "",
           customerName: customerName ?? "",
@@ -250,8 +249,8 @@ export async function addDR({
         },
       });
 
-      const updateRunningNumber = await tx.runningNumber.updateMany({
-        where: { id: "cm2iu3rcb008o0cl4cbln0bfz" },
+      const updateRunningNumber = await tx.runningNumber.update({
+        where: { id: "cm343yogl00000cl4df9secrk" },
         data: {
           value: { increment: 1 },
         },
