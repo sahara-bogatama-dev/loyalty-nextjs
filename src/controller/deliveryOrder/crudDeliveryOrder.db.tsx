@@ -210,14 +210,19 @@ export async function findProductBox({ labelingBox }: { labelingBox: string }) {
         throw new Error(`Mohon maaf labeling box tidak di temukan.`);
       }
 
-      return _.map(data, (o) => ({
-        shipQty: _.size(data),
-        labelingBox: o.labelingBox,
-        labelingBoxId: o.labelingBoxId,
-        productName: o.productName,
-        unit: o.unit,
-        weight: _.sumBy(data, "weight"),
-      }));
+      return _.uniqBy(
+        _.map(data, (o) => ({
+          shipQty: _.size(data),
+          labelingBox: o.labelingBox,
+          labelingBoxId: o.labelingBoxId,
+          productName: o.productName,
+          unit: o.unit,
+          weight: _.sumBy(data, (o) => {
+            return Number(o.weight);
+          }),
+        })),
+        "labelingBoxId"
+      );
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);
