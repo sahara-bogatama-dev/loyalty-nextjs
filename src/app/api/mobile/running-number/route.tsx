@@ -9,7 +9,7 @@ export const GET = auth(async function GET(req, ctx) {
 
     return NextResponse.json(
       {
-        running: `FG/OUT/${running.success ? running.value : 0}`,
+        running: `FG/OUT/${running.success ? running.value.value : 0}`,
       },
       {
         status: 200,
