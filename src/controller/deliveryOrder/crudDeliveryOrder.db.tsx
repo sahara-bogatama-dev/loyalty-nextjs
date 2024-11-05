@@ -198,6 +198,24 @@ export async function listProductBox() {
   }
 }
 
+export async function findProductBox({ labelingBox }: { labelingBox: string }) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const data = await tx.stokopname.findFirst({
+        where: { labelingBox, status: { in: [4, 6] } },
+      });
+
+      if (!data) {
+        throw new Error(`Mohon maaf labeling box tidak di temukan.`);
+      }
+
+      return data;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
 export async function addDR({
   shippingDate,
   agentId,

@@ -12,6 +12,7 @@ import {
   addDR,
   canceledDR,
   DeliveryOrder,
+  findProductBox,
   listProductBox,
   printDR,
   receiveDR,
@@ -159,6 +160,17 @@ const listProductBoxs = createServerAction(async () => {
   }
 });
 
+const findProductBoxs = createServerAction(
+  async ({ labelingBox }: { labelingBox: string }) => {
+    try {
+      const data = await findProductBox({ labelingBox });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
 export {
   listDataDelivery,
   listDataDeliveryProduct,
@@ -169,5 +181,6 @@ export {
   listDataDeliveryMobile,
   addDRS,
   listProductBoxs,
+  findProductBoxs,
 };
 //endregion

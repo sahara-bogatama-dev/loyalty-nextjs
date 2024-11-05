@@ -1,4 +1,4 @@
-import { listDataDeliveryMobile } from "@/controller/deliveryOrder/action";
+import { findProductBoxs } from "@/controller/deliveryOrder/action";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
@@ -7,15 +7,13 @@ export const GET = auth(async function GET(req, ctx) {
   try {
     if (req.auth) {
       const { params } = ctx;
-      const days = Array.isArray(params?.days)
-        ? params.days[0]
-        : params?.days ?? 30;
+      const id = Array.isArray(params?.id) ? params.id[0] : params?.id ?? 30;
 
-      const listDR = await listDataDeliveryMobile({ days: days as number });
+      const data = await findProductBoxs({ labelingBox: id as string });
 
       return NextResponse.json(
         {
-          listDR: listDR.success ? listDR.value : [],
+          labelingBox: data?.success ? data.value : undefined,
         },
         {
           status: 200,
