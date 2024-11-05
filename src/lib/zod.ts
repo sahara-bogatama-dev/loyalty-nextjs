@@ -68,7 +68,8 @@ export const createDRInSchema = z.object({
     .min(1, "Delivery Address cannot be empty"),
   deliveryNote: z
     .string({ required_error: "Delivery Note is required" })
-    .min(1, "Delivery Note cannot be empty"),
+    .min(1, "Delivery Note cannot be empty")
+    .optional(),
   totalWeight: z
     .number({ required_error: "Total Weight is required" })
     .min(1, "Total Weight cannot be empty"),

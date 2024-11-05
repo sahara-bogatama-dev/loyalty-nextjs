@@ -416,6 +416,13 @@ export default function Home() {
                     editable: false,
                   },
                   {
+                    field: "deliveryNote",
+                    headerName: "Delivery Note",
+                    width: 250,
+                    type: "string",
+                    editable: false,
+                  },
+                  {
                     field: "receiveBy",
                     headerName: "Receive By",
                     width: 250,
