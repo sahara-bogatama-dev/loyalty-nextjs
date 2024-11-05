@@ -202,7 +202,7 @@ export async function listProductBox() {
 export async function findProductBox({ labelingBox }: { labelingBox: string }) {
   try {
     return prisma.$transaction(async (tx) => {
-      const data = await tx.stokopname.findFirst({
+      const data = await tx.stokopname.findMany({
         where: { labelingBox, status: { in: [4, 6] } },
       });
 
