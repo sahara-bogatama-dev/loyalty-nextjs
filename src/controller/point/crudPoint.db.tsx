@@ -144,3 +144,26 @@ export async function addPoint({
     throw new Error(`Error ${error.message}`);
   }
 }
+
+export async function topTenPoint() {
+  try {
+    const topPoints = await prisma.pointLoyalty.findMany({
+      orderBy: {
+        point: "desc",
+      },
+      take: 10,
+      include: {
+        userIdData: true,
+      },
+    });
+
+    const result = topPoints.map((entry) => ({
+      nama: entry.userIdData?.name || "Unknown",
+      point: entry.point,
+    }));
+
+    return result;
+  } catch (error: any) {
+    throw new Error(`Error fetching top points: ${error.message}`);
+  }
+}

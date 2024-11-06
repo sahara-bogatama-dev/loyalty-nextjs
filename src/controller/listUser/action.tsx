@@ -15,8 +15,8 @@ import _ from "lodash";
 import dayjs from "dayjs";
 import { createUserInternal } from "../register/register.db";
 import sendMailer from "@/lib/node.mailer";
+import { newAccount } from "@/app/component/templateEmail.comp";
 
-//region list User
 const userRoles = createServerAction(async ({ id }: { id: string }) => {
   try {
     const detail = await userDetail({ id });
@@ -67,12 +67,12 @@ const createInternalUser = createServerAction(
           if (created) {
             await sendMailer({
               send: email,
-              subject: `${fullname} akun berhasil dibuat.`,
-              html: `<html>
-                  <span>berhasil ${dayjs(randomDate).format(
-                    "DDMMMMYYYY"
-                  )}</span>
-                </html>`,
+              subject: "New Account Created – Your Login Information",
+              html: newAccount({
+                fullname: created.name ?? "",
+                username: created.email ?? "",
+                password: dayjs(randomDate).format("DDMMMMYYYY"),
+              }),
             });
 
             return created;

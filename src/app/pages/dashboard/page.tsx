@@ -29,6 +29,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { topTenPoints } from "@/controller/point/action";
 
 const roleInternal = ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"];
 
@@ -44,7 +45,9 @@ export default function Home() {
   const [baseUrl, setBaseUrl] = React.useState("");
 
   const [loadingCampaign, setLoadingCampaign] = React.useState(false);
+  const [loadingTop, setLoadingTop] = React.useState(false);
   const [activeCampaign, setActiveCampaign] = React.useState<any>([]);
+  const [topTenPoint, setTopTenPoin] = React.useState<any>([]);
   const [userRole, setUserRole] = React.useState<any>([]);
 
   const fetchCampaign = React.useCallback(async () => {
@@ -61,30 +64,48 @@ export default function Home() {
     }
   }, [messageApi]);
 
-  const roles = React.useCallback(async () => {
-    const roles = await userRoles({ id: session?.user?.id as string });
+  const fetchTopTen = React.useCallback(async () => {
+    setLoadingTop(true);
+    const top = await topTenPoints();
 
-    if (roles.success) {
-      const user = _.map(roles.value, (o) => {
-        return o.role;
-      });
-
-      setUserRole(user);
-
-      const hasRole = roleInternal.some((role) => user.includes(role));
-      if (hasRole) {
-        fetchCampaign().finally(() => {
-          setLoadingCampaign(false);
-        });
-      } else {
-      }
+    if (top.success) {
+      setTopTenPoin(top.value);
     } else {
       messageApi.open({
         type: "error",
-        content: roles.error,
+        content: top.error,
       });
     }
-  }, [fetchCampaign, messageApi, session?.user?.id]);
+  }, [messageApi]);
+
+  const roles = React.useCallback(async () => {
+    if (session?.user?.id) {
+      const roles = await userRoles({ id: session.user.id });
+
+      if (roles.success) {
+        const user = _.map(roles.value, (o) => {
+          return o.role;
+        });
+
+        setUserRole(user);
+
+        const hasRole = roleInternal.some((role) => user.includes(role));
+        if (hasRole) {
+          fetchCampaign().finally(() => {
+            setLoadingCampaign(false);
+          });
+          fetchTopTen().finally(() => {
+            setLoadingTop(false);
+          });
+        }
+      } else {
+        messageApi.open({
+          type: "error",
+          content: roles.error,
+        });
+      }
+    }
+  }, [fetchCampaign, fetchTopTen, messageApi, session?.user?.id]);
 
   React.useEffect(() => {
     const { protocol, hostname, port } = window.location;
@@ -128,7 +149,7 @@ export default function Home() {
               borderRadius: borderRadiusLG,
             }}
           >
-            {_.intersection(userRole, roleInternal).length > 0 && (
+            {_.intersection(userRole, roleInternal).length > 0 ? (
               <Row gutter={[16, 16]} justify="center">
                 <Col xs={24} sm={24} md={24} xl={12}>
                   <Card
@@ -156,24 +177,11 @@ export default function Home() {
                 <Col xs={24} sm={24} md={24} xl={12}>
                   <Card
                     title="Top 10 Point"
-                    loading={loadingCampaign}
+                    loading={loadingTop}
                     style={{ width: "100%" }}
                   >
                     <ResponsiveContainer width="100%" height={400}>
-                      <BarChart
-                        data={[
-                          { nama: "Alice", point: 1000 },
-                          { nama: "Bob", point: 400 },
-                          { nama: "Charlie", point: 150 },
-                          { nama: "David", point: 88 },
-                          { nama: "Eva", point: 60 },
-                          { nama: "Frank", point: 30 },
-                          { nama: "Grace", point: 22 },
-                          { nama: "Henry", point: 5 },
-                          { nama: "Ivy", point: 2 },
-                          { nama: "Jack", point: 1 },
-                        ]}
-                      >
+                      <BarChart data={topTenPoint}>
                         <XAxis dataKey="nama" />
                         <YAxis />
                         <Tooltip />
@@ -184,6 +192,10 @@ export default function Home() {
                   </Card>
                 </Col>
               </Row>
+            ) : (
+              <div className="text-center text-lg font-semibold text-red-500">
+                You do not have permission to access the dashboard.
+              </div>
             )}
           </div>
         </Content>

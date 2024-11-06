@@ -8,12 +8,20 @@ interface Users {
 }
 
 export function userDetail({ id }: Users) {
+  if (!id) {
+    throw new Error("User ID cannot be empty");
+  }
+
   try {
     return prisma.$transaction(async (tx) => {
       const users = await tx.user.findUnique({
         where: { id },
         include: { role: true },
       });
+
+      if (!users) {
+        throw new Error("User not found");
+      }
 
       return users;
     });

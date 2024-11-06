@@ -5,6 +5,7 @@ import _ from "lodash";
 import dayjs from "dayjs";
 import { changePassword, forgotPasasUser } from "../register/register.db";
 import sendMailer from "@/lib/node.mailer";
+import { forgotPassword } from "@/app/component/templateEmail.comp";
 
 const forgotUser = createServerAction(async ({ email }: { email?: string }) => {
   try {
@@ -25,12 +26,12 @@ const forgotUser = createServerAction(async ({ email }: { email?: string }) => {
       if (created) {
         await sendMailer({
           send: created.email ?? "",
-          subject: `${created.name} forgot successfuly.`,
-          html: `<html>
-                  <span>Temp Pass ${dayjs(randomDate).format(
-                    "DDMMMMYYYY"
-                  )}</span>
-                </html>`,
+          subject: "Password Reset Request",
+          html: forgotPassword({
+            fullname: created.name ?? "",
+            username: created.email ?? "",
+            password: dayjs(randomDate).format("DDMMMMYYYY"),
+          }),
         });
 
         return created;

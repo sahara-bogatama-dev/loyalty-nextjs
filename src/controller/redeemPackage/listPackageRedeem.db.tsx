@@ -62,7 +62,7 @@ export async function listDataPackageRedeemByUserId({
           description: o.packageDesc,
           cost: o.costPoint,
           limit: o.limit,
-          photo: `https://sahara-app.vercel.app/api/package-redeem/image/${o.packageId}`,
+          photo: `${process.env.PHOTO_URL}api/package-redeem/image/${o.packageId}`,
           currentLimit: currentLimit,
           active: isActive,
         };

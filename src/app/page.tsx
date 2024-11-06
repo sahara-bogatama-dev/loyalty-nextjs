@@ -4,9 +4,18 @@ import React from "react";
 import Image from "next/image";
 import type { FormProps } from "antd";
 import moment from "moment/moment.js";
-import { Button, ConfigProvider, Form, Input, message } from "antd";
+import {
+  Button,
+  ConfigProvider,
+  Divider,
+  Form,
+  Input,
+  message,
+  Modal,
+} from "antd";
 import { login } from "@/controller/action";
 import { useRouter } from "next/navigation";
+import { forgotUser } from "@/controller/register/action";
 
 type FieldType = {
   username?: string;
@@ -18,6 +27,8 @@ export default function Home() {
   const router = useRouter();
   const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = React.useState(false);
+  const [loadingForgot, setLoadingForgot] = React.useState(false);
+  const [modalForgot, setModalForgot] = React.useState(false);
 
   const onFinish: FormProps<FieldType>["onFinish"] = async (values) => {
     setLoading(true);
@@ -27,14 +38,15 @@ export default function Home() {
     });
 
     if (resAuth.success) {
+      setLoading(false);
       router.replace("/pages/dashboard");
     } else {
+      setLoading(false);
       messageApi.open({
         type: "error",
         content: resAuth.error.replace(/Error: /g, ""),
       });
     }
-    setLoading(false);
   };
 
   return (
@@ -66,10 +78,14 @@ export default function Home() {
             autoComplete="off"
           >
             <Form.Item<FieldType>
-              label="Username"
+              label="Email"
               name="username"
               rules={[
-                { required: true, message: "Please input your username!" },
+                {
+                  required: true,
+                  message: "Please input your email!",
+                  type: "email",
+                },
               ]}
             >
               <Input />
@@ -97,9 +113,92 @@ export default function Home() {
                 </Button>
               </ConfigProvider>
             </Form.Item>
+
+            <Divider style={{ borderColor: "#7cb305" }}> OR </Divider>
+
+            <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
+              <ConfigProvider theme={{ token: { colorPrimary: "red" } }}>
+                <Button
+                  type="primary"
+                  htmlType="button"
+                  onClick={() => {
+                    setModalForgot(true);
+                  }}
+                  block
+                >
+                  FORGOT PASSWORD
+                </Button>
+              </ConfigProvider>
+            </Form.Item>
           </Form>
         </div>
       </div>
+
+      <Modal
+        title={"Forgot Password"}
+        footer={null}
+        open={modalForgot}
+        onCancel={() => setModalForgot(false)}
+        destroyOnClose
+      >
+        <Form
+          name="updateProduct"
+          className="gap-10"
+          onFinish={async (value) => {
+            try {
+              setLoadingForgot(true);
+
+              const forgotPass = await forgotUser({ email: value.email });
+
+              if (forgotPass.success) {
+                setLoadingForgot(false);
+                messageApi.success(
+                  "Temporary password will be sent to your email."
+                );
+              } else {
+                setLoadingForgot(false);
+                messageApi.open({
+                  type: "error",
+                  content: forgotPass.error,
+                });
+              }
+            } catch (e: any) {
+              messageApi.open({
+                type: "error",
+                content: e.message,
+              });
+            }
+          }}
+          autoComplete="off"
+          labelCol={{ span: 24 }}
+          wrapperCol={{ span: 24 }}
+        >
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              {
+                required: true,
+                message: "Please input your email!",
+                type: "email",
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
+            <Button
+              loading={loadingForgot}
+              type="primary"
+              htmlType="submit"
+              block
+            >
+              Send to Email
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <footer className="bg-white text-black text-center py-4 text-sm">
         &copy; {moment().format("YYYY")} PT. SAHARA BOGATAMA All rights

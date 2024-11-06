@@ -6,6 +6,7 @@ import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import { listMyRedeem, listRedeemAgent } from "./listRedeem.db";
 import { approveRedeemAgent, exchangePoints, Redeems } from "./crudRedeem.db";
 import sendMailer from "@/lib/node.mailer";
+import { redeemPackage } from "@/app/component/templateEmail.comp";
 
 //region labelng product
 const listDataRedeem = createServerAction(
@@ -47,7 +48,6 @@ const approveRedeem = createServerAction(
 const exchangePointUser = createServerAction(
   async ({ packageId, createdBy, userId, agentId, redeemCode }: Redeems) => {
     try {
-      console.log(redeemCode);
       const data = await exchangePoints({
         packageId,
         createdBy,
@@ -60,10 +60,16 @@ const exchangePointUser = createServerAction(
         await sendMailer({
           send: data?.redeemPackage?.email ?? "",
           cc: `${data.findAgentEmail?.email}, no-reply@sahara.com`,
-          subject: `${data?.redeemPackage?.fullname} sudah melalukan tukar point.`,
-          html: `<html>
-                  <span>${redeemCode}</span>
-                </html>`,
+          subject: `Exchange Code Approval for ${data?.redeemPackage?.packageName}`,
+          html: redeemPackage({
+            fullname: data?.redeemPackage?.fullname ?? "",
+            packageName: data?.redeemPackage?.packageName ?? "",
+            agentName: data?.findAgentEmail?.customerName ?? "",
+            agentPICName: data?.findAgentEmail?.picName ?? "",
+            agentPhone: data?.findAgentEmail?.phone ?? "",
+            agentPICPhone: data?.findAgentEmail?.picPhone ?? "",
+            agentAddress: data?.findAgentEmail?.storeAddress ?? "",
+          }),
         });
         return data;
       } else {

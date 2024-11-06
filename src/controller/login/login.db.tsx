@@ -8,7 +8,7 @@ interface UserLogin {
   password: string;
 }
 
-export function userLogin({ email, password }: UserLogin) {
+export async function userLogin({ email, password }: UserLogin) {
   try {
     return prisma.$transaction(async (tx) => {
       const checkUser = await tx.user.findFirst({
@@ -17,24 +17,25 @@ export function userLogin({ email, password }: UserLogin) {
         },
       });
 
-      if (checkUser && checkUser.password) {
-        const matchPassword = await bcrypt.compare(
-          password,
-          checkUser.password
-        );
-
-        if (matchPassword) {
-          if (!checkUser.inActive) {
-            return checkUser;
-          } else {
-            throw new Error("Your account inActive, please contact sahara");
-          }
-        } else {
-          throw new Error("Password incorrect.");
-        }
-      } else {
+      if (checkUser === null) {
         throw new Error("Account not found.");
       }
+
+      if (!checkUser.password) {
+        throw new Error("Password not found.");
+      }
+
+      const matchPassword = await bcrypt.compare(password, checkUser.password);
+
+      if (!matchPassword) {
+        throw new Error("Password incorrect.");
+      }
+
+      if (checkUser.inActive) {
+        throw new Error("Your account inActive, please contact sahara");
+      }
+
+      return checkUser;
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

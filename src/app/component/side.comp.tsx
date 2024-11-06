@@ -1,5 +1,15 @@
 import React from "react";
-import { Layout, Menu, ConfigProvider, Avatar, message } from "antd";
+import {
+  Layout,
+  Menu,
+  ConfigProvider,
+  Avatar,
+  message,
+  Modal,
+  Form,
+  Button,
+  Input,
+} from "antd";
 import _ from "lodash";
 
 import { AiFillDashboard } from "react-icons/ai";
@@ -16,9 +26,10 @@ import {
 } from "react-icons/fa6";
 import { MdCampaign, MdOutlineRedeem, MdDeliveryDining } from "react-icons/md";
 import { userRoles } from "@/controller/listUser/action";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { Session } from "next-auth";
+import { PiPasswordFill } from "react-icons/pi";
+import { changePasswords } from "@/controller/register/action";
 
 interface SideBarProps {
   collapsed: boolean;
@@ -64,7 +75,8 @@ export default function SideBar({
 }: SideBarProps) {
   const { Sider } = Layout;
   const [menuList, setMenuList] = React.useState<MenuItem[]>([]);
-  const [baseUrl, setBaseUrl] = React.useState("");
+  const [modalPass, setModalPass] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
   const [messageApi, contextHolder] = message.useMessage();
 
   const route = useRouter();
@@ -216,6 +228,20 @@ export default function SideBar({
           },
         ],
       },
+      {
+        key: "sub6",
+        label: "SETTING ACCOUNT",
+        children: [
+          {
+            key: "/pages/Password",
+            label: "Reset Password",
+            icon: <PiPasswordFill />,
+            onClick: () => {
+              setModalPass(true);
+            },
+          },
+        ],
+      },
     ],
     [route]
   );
@@ -236,9 +262,6 @@ export default function SideBar({
               content: roles.error,
             });
           }
-
-          const { protocol, hostname, port } = window.location;
-          setBaseUrl(`${protocol}//${hostname}${port ? `:${port}` : ""}`);
         }
       } catch (e: any) {
         messageApi.open({
@@ -292,6 +315,7 @@ export default function SideBar({
               iconSize: 15,
             },
           },
+          token: { colorPrimary: "red" },
         }}
       >
         <Menu
@@ -300,6 +324,63 @@ export default function SideBar({
           defaultSelectedKeys={[usePathname()]}
           items={menuList}
         />
+
+        <Modal
+          title={"Change Password"}
+          footer={null}
+          open={modalPass}
+          onCancel={() => setModalPass(false)}
+          destroyOnClose
+        >
+          <Form
+            name="updateProduct"
+            className="gap-10"
+            onFinish={async (value) => {
+              try {
+                setLoading(true);
+                const savePass = await changePasswords({
+                  userId: session?.user?.id ?? "",
+                  password: value.password,
+                  updatedBy: session?.user?.name ?? "",
+                });
+
+                if (savePass.success) {
+                  setLoading(false);
+                  messageApi.success("Password berhasil dirubah.");
+                } else {
+                  messageApi.open({
+                    type: "error",
+                    content: savePass.error,
+                  });
+                }
+              } catch (e: any) {
+                messageApi.open({
+                  type: "error",
+                  content: e.message,
+                });
+              }
+            }}
+            autoComplete="off"
+            labelCol={{ span: 24 }}
+            wrapperCol={{ span: 24 }}
+          >
+            <Form.Item
+              label="Password"
+              name="password"
+              rules={[
+                { required: true, message: "Please input your password!" },
+              ]}
+            >
+              <Input.Password />
+            </Form.Item>
+
+            <Form.Item wrapperCol={{ offset: 0, span: 24 }}>
+              <Button loading={loading} type="primary" htmlType="submit" block>
+                Save
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
       </ConfigProvider>
     </Sider>
   );

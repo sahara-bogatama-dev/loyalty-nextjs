@@ -14,7 +14,7 @@ export const GET = auth(async function GET(req, ctx) {
           activeCampaign: activeCampaign.success
             ? _.map(activeCampaign.value, (o) => ({
                 ...o,
-                photo: `https://sahara-app.vercel.app/api/campaign/image/${o.campaignId}`,
+                photo: `${process.env.PHOTO_URL}/api/campaign/image/${o.campaignId}`,
               }))
             : [],
         },

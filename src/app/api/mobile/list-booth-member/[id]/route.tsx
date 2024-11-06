@@ -19,7 +19,7 @@ export const GET = auth(async function GET(req, ctx) {
           listBooth: boothData.success
             ? _.map(boothData.value.result, (o) => ({
                 ...o,
-                photo: `https://sahara-app.vercel.app/api/booth/image/${o.boothMemberId}`,
+                photo: `${process.env.PHOTO_URL}api/booth/image/${o.boothMemberId}`,
               }))
             : [],
         },

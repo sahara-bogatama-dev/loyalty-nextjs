@@ -24,14 +24,6 @@ export default function HeaderBar({ onCollapsed }: HeaderBarProps) {
       <div className="flex justify-between items-center px-4 py-4">
         <Button
           type="text"
-          icon={<RiMailSendLine />}
-          onClick={() => {
-            testerEmail();
-          }}
-        />
-
-        <Button
-          type="text"
           icon={<BsFillMenuButtonFill />}
           onClick={onCollapsed}
         />

@@ -7,6 +7,7 @@ import _ from "lodash";
 
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
 import sendMailer from "@/lib/node.mailer";
+import { newAccount } from "@/app/component/templateEmail.comp";
 
 //region action login
 const login = createServerAction(
@@ -39,11 +40,13 @@ const logout = createServerAction(async () => {
 const testerEmail = createServerAction(async () => {
   try {
     const sender = await sendMailer({
-      send: "rizal.rizarudesu@gmail.com",
+      send: "no-reply@saharabogatama.com",
       subject: `Test Email`,
-      html: `<html>
-                  <span> Working!<s/span>
-                </html>`,
+      html: newAccount({
+        password: "TEST",
+        fullname: "Testeer",
+        username: "Tester@gmail.com",
+      }),
     });
 
     return sender;
