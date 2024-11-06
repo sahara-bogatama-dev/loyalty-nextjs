@@ -5,6 +5,7 @@ import _ from "lodash";
 
 import { addAgent, Agents, deleteAgent, updateAgent } from "./crudAgent.db";
 import { listAgent } from "./listAgent.db";
+import sendMailer from "@/lib/node.mailer";
 
 //region agent
 const addAgents = createServerAction(
@@ -30,7 +31,15 @@ const addAgents = createServerAction(
         storeAddress,
       });
 
-      return data;
+      await sendMailer({
+        send: data.addAgent.email ?? "",
+        subject: `${data.addAgent.customerName} Sudah teerdaftar`,
+        html: `<html>
+                  <span> Pass ${data.password}</span>
+                </html>`,
+      });
+
+      return data.addAgent;
     } catch (error: any) {
       throw new ServerActionError(error.message);
     }

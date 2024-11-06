@@ -2,7 +2,8 @@ import React from "react";
 import { Button, Layout, theme } from "antd";
 import { BsFillMenuButtonFill } from "react-icons/bs";
 import { FaSignOutAlt } from "react-icons/fa";
-import { logout } from "@/controller/action";
+import { logout, testerEmail } from "@/controller/action";
+import { RiMailSendLine } from "react-icons/ri";
 
 interface HeaderBarProps {
   onCollapsed: () => void;
@@ -21,6 +22,14 @@ export default function HeaderBar({ onCollapsed }: HeaderBarProps) {
       }}
     >
       <div className="flex justify-between items-center px-4 py-4">
+        <Button
+          type="text"
+          icon={<RiMailSendLine />}
+          onClick={() => {
+            testerEmail();
+          }}
+        />
+
         <Button
           type="text"
           icon={<BsFillMenuButtonFill />}

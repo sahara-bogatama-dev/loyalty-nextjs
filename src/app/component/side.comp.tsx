@@ -270,16 +270,16 @@ export default function SideBar({
       {contextHolder}
       <div className="m-2 rounded-md bg-white p-3 flex flex-row gap-2  items-center">
         <Avatar
-          src={
-            <Image
-              src={`${baseUrl}/api/userDetail/image/`}
-              alt="avatar"
-              width={50}
-              height={50}
-              unoptimized
-            />
-          }
-        />
+          size="large"
+          gap={10}
+          style={{ backgroundColor: "red", verticalAlign: "middle" }}
+        >
+          {session?.user?.name
+            ?.split(" ")
+            .map((word) => word[0])
+            .join("")
+            .toUpperCase()}
+        </Avatar>
         <span className="text-black text-xs">{session?.user?.name}</span>
       </div>
       <ConfigProvider

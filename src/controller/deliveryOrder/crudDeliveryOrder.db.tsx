@@ -243,6 +243,14 @@ export async function addDR({
 }: DeliveryOrder) {
   try {
     return prisma.$transaction(async (tx) => {
+      const existDR = await tx.deliveryOrder.findFirst({ where: { noSurat } });
+
+      if (existDR) {
+        throw new Error(
+          `Delivery Request sudah dibikin silahkaan refresh No Surat.`
+        );
+      }
+
       const data = await tx.deliveryOrder.create({
         data: {
           noSurat: noSurat ?? "",
@@ -261,8 +269,10 @@ export async function addDR({
         },
       });
 
+      const running = await tx.runningNumber.findFirst();
+
       const updateRunningNumber = await tx.runningNumber.update({
-        where: { id: "cm343yogl00000cl4df9secrk" },
+        where: { id: running?.id },
         data: {
           value: { increment: 1 },
         },

@@ -6,6 +6,7 @@ import { CredentialsSignin } from "next-auth";
 import _ from "lodash";
 
 import { createServerAction, ServerActionError } from "@/lib/action-utils";
+import sendMailer from "@/lib/node.mailer";
 
 //region action login
 const login = createServerAction(
@@ -35,4 +36,20 @@ const logout = createServerAction(async () => {
 });
 //endregion
 
-export { login, logout };
+const testerEmail = createServerAction(async () => {
+  try {
+    const sender = await sendMailer({
+      send: "rizal.rizarudesu@gmail.com",
+      subject: `Test Email`,
+      html: `<html>
+                  <span> Working!<s/span>
+                </html>`,
+    });
+
+    return sender;
+  } catch (error: any) {
+    throw new ServerActionError(error.messaage);
+  }
+});
+
+export { login, logout, testerEmail };

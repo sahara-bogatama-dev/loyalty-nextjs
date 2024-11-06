@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import _ from "lodash";
+import _, { add } from "lodash";
+import bcrypt from "bcryptjs";
+import dayjs from "dayjs";
 
 const prisma = new PrismaClient();
 
@@ -15,6 +17,7 @@ export interface Agents {
   createdBy?: string;
   updatedBy?: string;
 }
+
 export async function addAgent({
   noNpwp,
   email,
@@ -26,6 +29,23 @@ export async function addAgent({
   storeAddress,
 }: Agents) {
   try {
+    // Check if email or username already exists before transaction
+    const checkEmail = await prisma.user.findFirst({ where: { email } });
+    const checkUsername = await prisma.user.findFirst({
+      where: { username: (email ?? "").split("@")[0] },
+    });
+    const stringMap = await prisma.stringMap.findUnique({
+      where: { id: "cm34nvwf700000cl60ggl8ghi" },
+    });
+
+    if (checkUsername) {
+      throw new Error(`Username ${checkUsername.username} already exists.`);
+    } else if (checkEmail) {
+      throw new Error(`Email ${checkEmail.email} already exists.`);
+    } else if (!stringMap) {
+      throw new Error(`StringMap not found.`);
+    }
+
     return prisma.$transaction(async (tx) => {
       const addAgent = await tx.agent.create({
         data: {
@@ -40,7 +60,38 @@ export async function addAgent({
         },
       });
 
-      return addAgent;
+      const start = dayjs("2000-01-01");
+      const end = dayjs(`${dayjs().year()}-12-31`);
+      const randomDate = start.add(
+        Math.random() * end.diff(start),
+        "milliseconds"
+      );
+
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(
+        dayjs(randomDate).format("DDMMMMYYYY"),
+        salt
+      );
+
+      await tx.user.create({
+        data: {
+          email,
+          username: addAgent.email.split("@")[0],
+          password: hash,
+          name: addAgent.customerName,
+          dateOfBirth: dayjs().format("DD-MM-YYYY"),
+          phone,
+          createdBy,
+          role: {
+            create: {
+              id: stringMap.id,
+              name: stringMap.name,
+            },
+          },
+        },
+      });
+
+      return { addAgent, password: dayjs(randomDate).format("DDMMMMYYYY") };
     });
   } catch (error: any) {
     throw new Error(`Error ${error.message}`);

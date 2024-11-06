@@ -278,6 +278,17 @@ export default function Home() {
                   pagination: {
                     paginationModel: { pageSize: 100, page: 0 },
                   },
+                  filter: {
+                    filterModel: {
+                      items: [
+                        {
+                          field: "status",
+                          operator: "equals",
+                          value: "Unprinted",
+                        },
+                      ],
+                    },
+                  },
                 }}
                 slots={{
                   toolbar: () => (
@@ -324,6 +335,9 @@ export default function Home() {
 
                               if (selectedRowIds.length > 0) {
                                 apiRef.current.exportDataAsExcel({
+                                  fileName: `PrintedLabelProducts[${dayjs().format(
+                                    "DD-MM-YYYY HH:mm"
+                                  )}]-${session?.user?.name}`,
                                   getRowsToExport: () => selectedRowIds,
                                 });
                               } else {
