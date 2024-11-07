@@ -95,13 +95,21 @@ export default function SideBar({
       {
         key: "sub2",
         label: "MASTER DATA",
-        role: ["cm0r2rm2w00000cl8as2u68th"],
+        role: [
+          "cm0r2rm2w00000cl8as2u68th",
+          "cm10arz7umDqiwykVSw8tr6",
+          "cm10arz5zteJVFP9yhCz4zj",
+        ], //Super Admin, Admin PPIC, Admin Marketing
         children: [
           {
             key: "/pages/product",
             label: "Product",
             icon: <FaBoxArchive />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: [
+              "cm0r2rm2w00000cl8as2u68th",
+              "cm10arz7umDqiwykVSw8tr6",
+              "cm10arz5zteJVFP9yhCz4zj",
+            ], //Super Admin, Admin PPIC, Admin Marketing
             onClick: () => {
               route.push("/pages/product");
             },
@@ -110,7 +118,7 @@ export default function SideBar({
             key: "/pages/agent",
             label: "Agent",
             icon: <FaHouseUser />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"], //Super Admin, Admin Marketing
             onClick: () => {
               route.push("/pages/agent");
             },
@@ -119,7 +127,7 @@ export default function SideBar({
             key: "/pages/owner-booth",
             label: "Owner Booth",
             icon: <FaStore />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"], //Super Admin, Admin Marketing
             onClick: () => {
               route.push("/pages/owner-booth");
             },
@@ -128,7 +136,7 @@ export default function SideBar({
             key: "/pages/list-user",
             label: "All User",
             icon: <FaUserPen />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"], //Super Admin, Admin Marketing
             onClick: () => {
               route.push("/pages/list-user");
             },
@@ -137,7 +145,7 @@ export default function SideBar({
             key: "/pages/campaign",
             label: "Campaign",
             icon: <MdCampaign />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"], //Super Admin, Admin Marketing
             onClick: () => {
               route.push("/pages/campaign");
             },
@@ -146,7 +154,7 @@ export default function SideBar({
             key: "/pages/package-redeem",
             label: "Package Redeem",
             icon: <MdOutlineRedeem />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"], //Super Admin, Admin Marketing
             onClick: () => {
               route.push("/pages/package-redeem");
             },
@@ -156,13 +164,23 @@ export default function SideBar({
       {
         key: "sub3",
         label: "INVENTORY",
-        role: ["cm0r2rm2w00000cl8as2u68th"],
+        role: [
+          "cm0r2rm2w00000cl8as2u68th",
+          "cm10arz7umDqiwykVSw8tr6",
+          "cm10arz9i8bZy4PPaS2xq3j",
+          "cm10arz5zteJVFP9yhCz4zj",
+          "cm10arz8n0txPpWpfqJ7pOk",
+        ], //Super Admin, Admin PPIC, Admin Product, Admin Marketing, Admin Gudang
         children: [
           {
             key: "/pages/labeling-product",
             label: "Labeling",
             icon: <FaBarcode />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: [
+              "cm0r2rm2w00000cl8as2u68th",
+              "cm10arz7umDqiwykVSw8tr6",
+              "cm10arz9i8bZy4PPaS2xq3j",
+            ], //Super Admin, Admin PPIC, Admin Product
             onClick: () => {
               route.push("/pages/labeling-product");
             },
@@ -171,7 +189,11 @@ export default function SideBar({
             key: "/pages/labeling-box",
             label: "Labeling Box",
             icon: <FaBoxesPacking />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: [
+              "cm0r2rm2w00000cl8as2u68th",
+              "cm10arz7umDqiwykVSw8tr6",
+              "cm10arz8n0txPpWpfqJ7pOk",
+            ], //Super Admin, Admin PPIC, Admin Gudang
             onClick: () => {
               route.push("/pages/labeling-box");
             },
@@ -180,7 +202,11 @@ export default function SideBar({
             key: "/pages/stock",
             label: "Stock",
             icon: <FaWarehouse />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: [
+              "cm0r2rm2w00000cl8as2u68th",
+              "cm10arz7umDqiwykVSw8tr6",
+              "cm10arz5zteJVFP9yhCz4zj",
+            ], //Super Admin, Admin PPIC, Admin Marketing
             onClick: () => {
               route.push("/pages/stock");
             },
@@ -190,13 +216,21 @@ export default function SideBar({
       {
         key: "sub4",
         label: "DISTRIBUTION",
-        role: ["cm0r2rm2w00000cl8as2u68th"],
+        role: [
+          "cm0r2rm2w00000cl8as2u68th",
+          "cm10arz7umDqiwykVSw8tr6",
+          "cm10arz9wDgbQVgTBwyvM2K",
+        ], //Super Admin, Admin PPIC, Admin Delivery
         children: [
           {
             key: "/pages/delivery-order",
             label: "Delivery Order",
             icon: <MdDeliveryDining />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: [
+              "cm0r2rm2w00000cl8as2u68th",
+              "cm10arz7umDqiwykVSw8tr6",
+              "cm10arz9wDgbQVgTBwyvM2K",
+            ],
             onClick: () => {
               route.push("/pages/delivery-order");
             },
@@ -206,13 +240,17 @@ export default function SideBar({
       {
         key: "sub5",
         label: "LOYALTY",
-        role: ["cm0r2rm2w00000cl8as2u68th"],
+        role: [
+          "cm0r2rm2w00000cl8as2u68th",
+          "cm34nvwf700000cl60ggl8ghi",
+          "cm10arz5zteJVFP9yhCz4zj",
+        ], //Super Admin, Agent, Admin Marketing
         children: [
           {
             key: "/pages/point",
             label: "Point",
             icon: <FaCoins />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm10arz5zteJVFP9yhCz4zj"], //Super Admin, Admin Marketing
             onClick: () => {
               route.push("/pages/point");
             },
@@ -221,7 +259,7 @@ export default function SideBar({
             key: "LY-2",
             label: "Claim",
             icon: <FaGift />,
-            role: ["cm0r2rm2w00000cl8as2u68th"],
+            role: ["cm0r2rm2w00000cl8as2u68th", "cm34nvwf700000cl60ggl8ghi"], //Super Admin, Agent
             onClick: () => {
               route.push("/pages/claim-redeem");
             },
