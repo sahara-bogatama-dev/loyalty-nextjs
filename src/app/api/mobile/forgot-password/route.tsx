@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
       email,
     });
 
-    console.log(create);
-
     if (create.success) {
       return NextResponse.json(
         {

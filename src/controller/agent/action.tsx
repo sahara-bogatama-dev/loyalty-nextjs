@@ -45,7 +45,6 @@ const addAgents = createServerAction(
 
       return data.addAgent;
     } catch (error: any) {
-      console.log(error.message);
       throw new ServerActionError(error.message);
     }
   }

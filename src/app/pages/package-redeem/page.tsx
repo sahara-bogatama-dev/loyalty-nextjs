@@ -89,7 +89,6 @@ export default function Home() {
     if (packageRedeem.success) {
       setPackageList(packageRedeem.value.result as any);
     } else {
-      console.log(packageRedeem.error);
       messageApi.open({
         type: "error",
         content: packageRedeem.error,

@@ -702,8 +702,6 @@ export default function Home() {
                           _.reject(prevRole, { id: item.id })
                         );
 
-                        console.log(userList);
-
                         messageApi.open({
                           type: "success",
                           content: "Role berhasil di hapus.",
