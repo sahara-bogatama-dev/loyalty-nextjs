@@ -14,6 +14,7 @@ import {
   DeliveryOrder,
   findProductBox,
   listProductBox,
+  listProductDeliveryOrder,
   printDR,
   receiveDR,
   submitDR,
@@ -164,6 +165,18 @@ const listProductBoxs = createServerAction(async () => {
   }
 });
 
+const listProductDR = createServerAction(
+  async ({ deliveryId }: { deliveryId: string }) => {
+    try {
+      const data = await listProductDeliveryOrder({ deliveryId });
+
+      return data;
+    } catch (error: any) {
+      throw new ServerActionError(error.message);
+    }
+  }
+);
+
 const findProductBoxs = createServerAction(
   async ({ labelingBox }: { labelingBox: string }) => {
     try {
@@ -186,5 +199,6 @@ export {
   addDRS,
   listProductBoxs,
   findProductBoxs,
+  listProductDR,
 };
 //endregion

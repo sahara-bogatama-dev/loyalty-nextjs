@@ -199,6 +199,24 @@ export async function listProductBox() {
   }
 }
 
+export async function listProductDeliveryOrder({
+  deliveryId,
+}: {
+  deliveryId: string;
+}) {
+  try {
+    return prisma.$transaction(async (tx) => {
+      const data = await tx.deliveryOrderProduct.findMany({
+        where: { deliveryOrderId: deliveryId },
+      });
+
+      return data;
+    });
+  } catch (error: any) {
+    throw new Error(`Error ${error.message}`);
+  }
+}
+
 export async function findProductBox({ labelingBox }: { labelingBox: string }) {
   try {
     return prisma.$transaction(async (tx) => {
