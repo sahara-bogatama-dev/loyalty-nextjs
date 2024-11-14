@@ -32,6 +32,8 @@ export default async function sendMailer({
       html: html, // use the html parameter passed to the function
     });
 
+    console.log(info);
+
     return info;
   } catch (error: any) {
     throw new Error(error.message);
