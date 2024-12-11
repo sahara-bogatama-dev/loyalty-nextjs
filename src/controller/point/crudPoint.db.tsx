@@ -128,7 +128,36 @@ export async function addPoint({
             });
 
             if (update) {
-              return update;
+              return update.point;
+            } else {
+              throw new Error(`Point gagal di berikan...`);
+            }
+          } else {
+            const newAdd = await tx.pointLoyalty.create({
+              data: {
+                point: point,
+                userId: userId ?? "",
+                createdBy: createdBy,
+                log: {
+                  create: {
+                    point: point,
+                    createdBy,
+                    userId: userId ?? "",
+                    status: 1,
+                    productCode: checkProductLabeling.productCode,
+                    productId: checkProductLabeling.productId,
+                    productName: checkProductLabeling.productName,
+                    labelingProductId: checkProductLabeling.labelingProductId,
+                    labelingProducts: checkProductLabeling.codeLabel,
+                    scanDate,
+                    campaignId: getPoint?.campaignId,
+                  },
+                },
+              },
+            });
+
+            if (newAdd) {
+              return newAdd.point;
             } else {
               throw new Error(`Point gagal di berikan...`);
             }

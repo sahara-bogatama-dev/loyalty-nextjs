@@ -407,6 +407,7 @@ export default function Home() {
                     headerName: "Shipping Date",
                     width: 250,
                     editable: false,
+                    type: "date",
                   },
                   {
                     field: "deliveryAddress",

@@ -152,6 +152,7 @@ export default function Home() {
       bod: newRow.dateOfBirth,
       leader: newRow.leader,
       updatedBy: session?.user?.name ?? "",
+      inMobile: newRow.inMobile,
     });
 
     if (updateRow.success) {

@@ -344,7 +344,7 @@ export default function Home() {
             }}
           >
             <div className="flex justify-center">
-              <Card size="small" title="Buat Campaign" bordered={true}>
+              <Card size="small" title="Buat Package" bordered={true}>
                 <Form
                   name="addPackage"
                   className="gap-10"

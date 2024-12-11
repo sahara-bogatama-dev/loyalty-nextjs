@@ -26,7 +26,7 @@ export const POST = auth(async function POST(req, ctx) {
       if (addPoint.success) {
         return NextResponse.json(
           {
-            message: `Point ${addPoint.value?.point}, berhasil di peroleh`,
+            message: `Point ${addPoint.value}, berhasil di peroleh`,
           },
           {
             status: 200,

@@ -31,8 +31,8 @@ export async function approveRedeemAgent({ redeemId, updatedBy }: Redeems) {
       if (claim) {
         await sendMailer({
           send: claim.email ?? "",
-          cc: "gie.posh@gmail.com, rizal.rizarudesu@yahoo.com",
-          subject: `Approvemeent clim reedeem`,
+          cc: "no-reply@saharabogatama.co.id",
+          subject: `Request for Approval: Claim Redemption`,
           html: `<html>
               <span>Agent</span>
             </html>`,

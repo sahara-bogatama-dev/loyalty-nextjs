@@ -13,7 +13,7 @@ export async function paginationListUser({
   try {
     const [result, count] = await prisma.$transaction([
       prisma.user.findMany({
-        where: { NOT: { email: "sahara@super1.com" } },
+        where: { NOT: { email: "no-reply@saharabogatama.co.id" } },
         skip,
         take,
         select: {
@@ -27,6 +27,7 @@ export async function paginationListUser({
           updatedBy: true,
           createdAt: true,
           updatedAt: true,
+          inMobile: true,
           leader: true,
           username: true,
           role: {
@@ -51,6 +52,7 @@ export async function listAllUser() {
   try {
     const [result] = await prisma.$transaction([
       prisma.user.findMany({
+        where: { NOT: { email: "no-reply@saharabogatama.co.id" } },
         select: {
           id: true,
           name: true,
@@ -58,6 +60,7 @@ export async function listAllUser() {
           dateOfBirth: true,
           email: true,
           inActive: true,
+          inMobile: true,
           createdBy: true,
           updatedBy: true,
           createdAt: true,
