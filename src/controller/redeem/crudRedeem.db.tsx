@@ -80,6 +80,19 @@ export async function exchangePoints({
         throw new Error(`Package Redeem limit sudah mencapai batas`);
       }
 
+      const pointNotEnough = await tx.pointLoyalty.findFirst({
+        where: { userId },
+        select: { point: true },
+      });
+
+      if (!pointNotEnough) {
+        throw new Error(`Point tidak ditemukan`);
+      }
+
+      if (pointNotEnough?.point < checkAvailablePackage.costPoint) {
+        throw new Error(`Point tidak mencukupi`);
+      }
+
       // Step 3: Create redeem package entry
       const redeemPackage = await tx.redeem.create({
         data: {
