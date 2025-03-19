@@ -70,6 +70,17 @@ export async function addPoint({
       });
 
       if (checkProductLabeling) {
+        const checkStatus = await tx.stokopname.findFirst({
+          where: {
+            labelingProductId: checkProductLabeling?.labelingProductId,
+            status: 11,
+          },
+        });
+
+        if (!checkStatus) {
+          throw new Error("Product belum terjual...");
+        }
+
         const checkDuplicateAnotherScan = await tx.pointReceiveLog.findMany({
           where: { labelingProductId: checkProductLabeling.labelingProductId },
         });
